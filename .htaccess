@@ -1,0 +1,73 @@
+# Kinderarbeit – Apache-Konfiguration
+# Funktioniert mit Apache 2.2 und 2.4 (z. B. bei manitu).
+
+DirectoryIndex index.php
+Options -Indexes
+
+# --- Verzeichnisse mit Anwendungscode und Daten abschotten -------------------
+RedirectMatch 404 ^/(app|data|bin|docs)(/|$)
+
+# --- Datenbank- und Konfigurationsdateien niemals ausliefern -----------------
+<FilesMatch "\.(sqlite|sqlite3|db|db-wal|db-shm|log|md|json|lock)$">
+  <IfModule mod_authz_core.c>
+    Require all denied
+  </IfModule>
+  <IfModule !mod_authz_core.c>
+    Order allow,deny
+    Deny from all
+  </IfModule>
+</FilesMatch>
+
+# Das Web-Manifest wird gebraucht und darf deshalb ausgeliefert werden.
+<Files "manifest.webmanifest">
+  <IfModule mod_authz_core.c>
+    Require all granted
+  </IfModule>
+  <IfModule !mod_authz_core.c>
+    Order allow,deny
+    Allow from all
+  </IfModule>
+</Files>
+
+# --- Versteckte Dateien schuetzen -------------------------------------------
+<FilesMatch "^\.">
+  <IfModule mod_authz_core.c>
+    Require all denied
+  </IfModule>
+  <IfModule !mod_authz_core.c>
+    Order allow,deny
+    Deny from all
+  </IfModule>
+</FilesMatch>
+
+# --- Sicherheits-Header ------------------------------------------------------
+<IfModule mod_headers.c>
+  Header always set X-Content-Type-Options "nosniff"
+  Header always set X-Frame-Options "SAMEORIGIN"
+  Header always set Referrer-Policy "same-origin"
+  Header always set Permissions-Policy "geolocation=(), camera=(), microphone=(), interest-cohort=()"
+  Header always set Content-Security-Policy "default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self'; form-action 'self'; frame-ancestors 'self'; base-uri 'self'"
+</IfModule>
+
+# --- Immer per HTTPS ausliefern ----------------------------------------------
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteCond %{HTTPS} !=on
+  RewriteCond %{HTTP:X-Forwarded-Proto} !=https
+  RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [R=301,L]
+</IfModule>
+
+# --- Statische Dateien zwischenspeichern -------------------------------------
+<IfModule mod_expires.c>
+  ExpiresActive On
+  ExpiresByType text/css            "access plus 7 days"
+  ExpiresByType application/javascript "access plus 7 days"
+  ExpiresByType image/svg+xml       "access plus 30 days"
+</IfModule>
+
+# --- Kompression --------------------------------------------------------------
+<IfModule mod_deflate.c>
+  AddOutputFilterByType DEFLATE text/html text/css application/javascript image/svg+xml application/manifest+json
+</IfModule>
+
+AddType application/manifest+json .webmanifest

@@ -1,0 +1,12 @@
+# Laufzeitdaten – gehoeren nicht ins Repository
+data/*.sqlite
+data/*.sqlite-wal
+data/*.sqlite-shm
+data/*.log
+
+# Werkzeuge und Betriebssysteme
+.DS_Store
+Thumbs.db
+*.swp
+.idea/
+.vscode/

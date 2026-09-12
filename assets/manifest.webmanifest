@@ -1,0 +1,14 @@
+{
+  "name": "Kinderarbeit",
+  "short_name": "Kinderarbeit",
+  "description": "Aufgaben, Taschengeld und Konto für die ganze Familie.",
+  "start_url": "../?p=start",
+  "scope": "../",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f4f1ec",
+  "theme_color": "#1c7ed6",
+  "icons": [
+    { "src": "favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}
