@@ -176,6 +176,35 @@ check('Emilius sieht fremde Aufgabe nicht', in_array('Auto waschen', $titles, tr
 $titles = array_column(Tasks::forChild((int)$julius['id']), 'title');
 check('Julius sieht seine Aufgabe',   in_array('Auto waschen', $titles, true), true);
 
+echo "\nZugangslinks\n";
+check('Zu Beginn kein Link',          $emilius['access_token'], null);
+
+$token = Users::createToken($childId);
+check('Token ist 32 Zeichen lang',    strlen($token), 32);
+check('Token ist hexadezimal',        (bool)preg_match('/^[a-f0-9]{32}$/', $token), true);
+
+$found = Users::findByToken($token);
+check('Token findet das Profil',      (int)($found['id'] ?? 0), $childId);
+check('Unbekannter Token findet nichts', Users::findByToken(str_repeat('f', 32)), null);
+check('Zu kurzer Token findet nichts',   Users::findByToken('abc'), null);
+check('Token anderer Form findet nichts', Users::findByToken('../../etc/passwd'), null);
+
+$second = Users::createToken($childId);
+check('Neuer Token unterscheidet sich', $second === $token, false);
+check('Alter Token gilt nicht mehr',    Users::findByToken($token), null);
+check('Neuer Token gilt',               (int)(Users::findByToken($second)['id'] ?? 0), $childId);
+
+Users::clearToken($childId);
+check('Zurueckgezogener Token gilt nicht mehr', Users::findByToken($second), null);
+
+$tokenA = Users::createToken($childId);
+$tokenB = Users::createToken((int)$julius['id']);
+check('Zwei Profile, zwei Token',     $tokenA === $tokenB, false);
+check('Jeder Token trifft sein Profil', (int)Users::findByToken($tokenB)['id'], (int)$julius['id']);
+
+check('Spalte access_token vorhanden',
+      in_array('access_token', $pdo->query('PRAGMA table_info(users)')->fetchAll(PDO::FETCH_COLUMN, 1), true), true);
+
 // Aufraeumen
 foreach (glob($tmp . '/*') ?: [] as $file) {
     @unlink($file);

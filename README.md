@@ -12,7 +12,7 @@ vollständige Historie und der Restbetrag pro Monat.
 
 | Bereich | Wer | Was |
 |---|---|---|
-| Anmeldung | alle | Profil antippen, PIN eingeben |
+| Anmeldung | alle | Profil antippen und PIN eingeben – oder persönlichen Zugangslink öffnen |
 | Aufgaben | Kinder | offene Aufgaben sehen und als erledigt melden |
 | Mein Konto | Kinder | Guthaben, Monatsübersicht, alle Buchungen |
 | Verlauf | Kinder | eigene Meldungen mit Status |
@@ -21,7 +21,7 @@ vollständige Historie und der Restbetrag pro Monat.
 | Kinder | Eltern | Konten im Vergleich, Detailseite je Kind |
 | Ausgaben | Eltern | regelmäßige monatliche Ausgaben je Kind |
 | Verlauf | Eltern | alle Buchungen, filterbar nach Kind und Monat |
-| Familie | Eltern | PINs, Sperren, Symbole und Farben |
+| Familie | Eltern | Zugangslinks, PINs, Sperren, Symbole und Farben |
 
 ## Die Familie
 
@@ -32,11 +32,37 @@ Beim ersten Start werden fünf Profile angelegt:
 | Emilius | Kind | `1111` |
 | Julius | Kind | `2222` |
 | Bruno | Kind | `3333` |
-| Birgitt | Eltern | `4444` |
+| Birgitta | Eltern | `4444` |
 | Thies | Eltern | `5555` |
 
 Beim ersten Anmelden muss jede und jeder eine eigene PIN setzen –
 die Start-PINs funktionieren also genau einmal.
+
+## Persönliche Zugangslinks
+
+Wer keine PIN tippen mag, bekommt von den Eltern einen eigenen Link:
+
+```
+https://kinderarbeit.example.de/?z=1d1a952f7a3c4e0b8f6d2a91c5e7b403
+```
+
+Die Eltern erzeugen ihn unter **Familie**, kopieren ihn mit einem Klick oder
+schicken ihn direkt über WhatsApp. Wer den Link öffnet, ist sofort angemeldet
+und wird nicht nach der PIN gefragt; der Token verschwindet dabei aus der
+Adresszeile.
+
+* Der Token ist 128 Bit lang und damit nicht zu erraten.
+* Ein Link gilt, bis er neu erzeugt oder zurückgezogen wird – er läuft nicht ab.
+* „Neu erzeugen“ macht den bisherigen Link sofort ungültig. Das ist der Weg,
+  wenn ein Link in falsche Hände geraten ist.
+* Die Rechte bleiben dieselben: ein Kind, das über seinen Link hereinkommt,
+  sieht weiterhin nur den eigenen Bereich.
+* Wer den Link eines Elternteils hat, hat Zugriff auf den gesamten
+  Elternbereich – solche Links also nur direkt an Birgitta oder Thies schicken.
+* Die Anwendung merkt sich, wann ein Link zuletzt benutzt wurde.
+
+Solange jemand ausschließlich den Link nutzt, bleibt die Start-PIN gültig.
+Deshalb lohnt es sich, unter **Familie** trotzdem einmal eine eigene PIN zu setzen.
 
 ## Wie das Geld gerechnet wird
 
@@ -73,6 +99,7 @@ Wer einen Cronjob hat, kann zusätzlich täglich `bin/cron.php` aufrufen.
 * funktioniert vollständig ohne JavaScript (JS ist nur Komfort)
 * helles und dunkles Design, für das Handy gebaut
 * CSRF-Schutz an allen Formularen, PIN-Sperre nach fünf Fehlversuchen
+* Zugangslinks mit 128-Bit-Token, jederzeit erneuerbar und zurückziehbar
 
 ```
 index.php              Einstiegspunkt und Routing
@@ -93,6 +120,8 @@ php bin/selftest.php        # prüft die Rechenlogik (ohne Webserver)
 php bin/demo-data.php       # legt einen Beispielbestand zum Ausprobieren an
 php bin/cron.php            # bucht fällige feste Ausgaben (optional per Cron)
 php bin/reset-pin.php Emilius 4711   # PIN zurücksetzen, wenn niemand mehr reinkommt
+php bin/zugangslink.php             # alle Zugangslinks anzeigen
+php bin/zugangslink.php Emilius     # neuen Zugangslink erzeugen
 ```
 
 ## Lokal ausprobieren

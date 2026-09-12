@@ -15,7 +15,7 @@ final class Database
         ['name' => 'Emilius', 'role' => 'child',  'emoji' => '🦊', 'color' => '#e8590c', 'pin' => '1111'],
         ['name' => 'Julius',  'role' => 'child',  'emoji' => '🦁', 'color' => '#1c7ed6', 'pin' => '2222'],
         ['name' => 'Bruno',   'role' => 'child',  'emoji' => '🐻', 'color' => '#2f9e44', 'pin' => '3333'],
-        ['name' => 'Birgitt', 'role' => 'parent', 'emoji' => '🌷', 'color' => '#c2255c', 'pin' => '4444'],
+        ['name' => 'Birgitta', 'role' => 'parent', 'emoji' => '🌷', 'color' => '#c2255c', 'pin' => '4444'],
         ['name' => 'Thies',   'role' => 'parent', 'emoji' => '⚓', 'color' => '#5f3dc4', 'pin' => '5555'],
     ];
 
@@ -88,6 +88,9 @@ final class Database
             failed_logins   INTEGER NOT NULL DEFAULT 0,
             locked_until    TEXT,
             last_login_at   TEXT,
+            access_token    TEXT UNIQUE,
+            token_created_at TEXT,
+            token_used_at   TEXT,
             created_at      TEXT    NOT NULL
         );
 
@@ -168,6 +171,23 @@ final class Database
         CREATE INDEX IF NOT EXISTS idx_ledger_month       ON ledger (child_id, booked_month);
         CREATE INDEX IF NOT EXISTS idx_expenses_child     ON expenses (child_id, is_active);
         SQL);
+
+        // Spalten, die erst spaeter dazugekommen sind, in bestehenden
+        // Datenbanken nachziehen. CREATE TABLE IF NOT EXISTS allein genuegt dafuer nicht.
+        self::addColumn($pdo, 'users', 'access_token', 'TEXT');
+        self::addColumn($pdo, 'users', 'token_created_at', 'TEXT');
+        self::addColumn($pdo, 'users', 'token_used_at', 'TEXT');
+
+        $pdo->exec('CREATE UNIQUE INDEX IF NOT EXISTS idx_users_token ON users (access_token) WHERE access_token IS NOT NULL');
+    }
+
+    /** Eine Spalte ergaenzen, falls sie noch fehlt. */
+    private static function addColumn(PDO $pdo, string $table, string $column, string $definition): void
+    {
+        $existing = $pdo->query('PRAGMA table_info(' . $table . ')')->fetchAll(PDO::FETCH_COLUMN, 1);
+        if (!in_array($column, $existing, true)) {
+            $pdo->exec('ALTER TABLE ' . $table . ' ADD COLUMN ' . $column . ' ' . $definition);
+        }
     }
 
     /** Familie und Beispielaufgaben anlegen. */

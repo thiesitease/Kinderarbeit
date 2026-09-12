@@ -62,6 +62,32 @@
     }, 0);
   });
 
+  /* --- Zugangslink in die Zwischenablage kopieren ------------------------- */
+  document.querySelectorAll('[data-copy]').forEach(function (button) {
+    var field = document.getElementById(button.dataset.copy);
+    if (!field) return;
+
+    button.addEventListener('click', function () {
+      var done = function () {
+        var original = button.textContent;
+        button.textContent = button.dataset.copiedLabel || 'Kopiert';
+        window.setTimeout(function () { button.textContent = original; }, 2000);
+      };
+
+      // Auswahl sichtbar machen, damit auch ein Kopieren von Hand leichtfällt.
+      field.focus();
+      field.setSelectionRange(0, field.value.length);
+
+      if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(field.value).then(done, function () {
+          if (document.execCommand('copy')) done();
+        });
+      } else if (document.execCommand('copy')) {
+        done();
+      }
+    });
+  });
+
   /* --- Filter sofort anwenden -------------------------------------------- */
   document.querySelectorAll('[data-autosubmit]').forEach(function (element) {
     element.addEventListener('change', function () {

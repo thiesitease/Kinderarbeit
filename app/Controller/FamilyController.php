@@ -13,11 +13,15 @@ final class FamilyController
     {
         Auth::requireParent();
 
+        $highlight = (int)($_SESSION['highlight_link'] ?? 0);
+        unset($_SESSION['highlight_link']);
+
         View::page('parent/family', [
-            'title'  => 'Familie',
-            'users'  => Users::all(),
-            'colors' => self::COLORS,
-            'emojis' => self::EMOJIS,
+            'title'     => 'Familie',
+            'users'     => Users::all(),
+            'colors'    => self::COLORS,
+            'emojis'    => self::EMOJIS,
+            'highlight' => $highlight,
         ]);
     }
 
@@ -59,6 +63,20 @@ final class FamilyController
             case 'unlock':
                 Users::unlock($id);
                 Flash::success('Die Sperre für ' . $user['name'] . ' ist aufgehoben.');
+                break;
+
+            case 'create-link':
+                $token = Users::createToken($id);
+                Flash::success(
+                    'Neuer Zugangslink für ' . $user['name'] . ' erzeugt'
+                    . (!empty($user['access_token']) ? ' – der bisherige gilt nicht mehr.' : '.')
+                );
+                $_SESSION['highlight_link'] = $id;
+                break;
+
+            case 'clear-link':
+                Users::clearToken($id);
+                Flash::info('Der Zugangslink von ' . $user['name'] . ' wurde zurückgezogen.');
                 break;
 
             case 'profile':
