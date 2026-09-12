@@ -40,32 +40,74 @@
   color-scheme: light;
 }
 
+/* Farbwerte des dunklen Designs – einmal definiert, damit die beiden
+   Zuordnungen darunter nicht auseinanderlaufen koennen. */
+:root {
+  --dark-bg: #14120f;
+  --dark-surface: #1e1b17;
+  --dark-surface-2: #26221d;
+  --dark-border: #342f28;
+  --dark-border-strong: #463f36;
+  --dark-text: #f2eee7;
+  --dark-muted: #a79f93;
+  --dark-faint: #7d7668;
+  --dark-accent-ink: color-mix(in srgb, var(--accent) 45%, #ffffff);
+  --dark-on-positive: #08240f;
+  --dark-positive: #6bcb7f;
+  --dark-positive-soft: #17301d;
+  --dark-negative: #ff8b80;
+  --dark-negative-soft: #331a18;
+  --dark-warn: #f0b450;
+  --dark-warn-soft: #33260f;
+  --dark-shadow: 0 1px 2px rgba(0, 0, 0, .4), 0 4px 16px rgba(0, 0, 0, .3);
+  --dark-shadow-lift: 0 2px 6px rgba(0, 0, 0, .45), 0 12px 32px rgba(0, 0, 0, .4);
+}
+
+/* Drei Zustaende: „System“ (nichts gesetzt), fest hell, fest dunkel. */
 @media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #14120f;
-    --surface: #1e1b17;
-    --surface-2: #26221d;
-    --border: #342f28;
-    --border-strong: #463f36;
-    --text: #f2eee7;
-    --muted: #a79f93;
-    --faint: #7d7668;
-
-    --accent-ink: color-mix(in srgb, var(--accent) 45%, #ffffff);
-    --on-positive: #08240f;
-
-    --positive: #6bcb7f;
-    --positive-soft: #17301d;
-    --negative: #ff8b80;
-    --negative-soft: #331a18;
-    --warn: #f0b450;
-    --warn-soft: #33260f;
-
-    --shadow: 0 1px 2px rgba(0, 0, 0, .4), 0 4px 16px rgba(0, 0, 0, .3);
-    --shadow-lift: 0 2px 6px rgba(0, 0, 0, .45), 0 12px 32px rgba(0, 0, 0, .4);
-
+  :root:not([data-theme="light"]) {
+    --bg: var(--dark-bg);
+    --surface: var(--dark-surface);
+    --surface-2: var(--dark-surface-2);
+    --border: var(--dark-border);
+    --border-strong: var(--dark-border-strong);
+    --text: var(--dark-text);
+    --muted: var(--dark-muted);
+    --faint: var(--dark-faint);
+    --accent-ink: var(--dark-accent-ink);
+    --on-positive: var(--dark-on-positive);
+    --positive: var(--dark-positive);
+    --positive-soft: var(--dark-positive-soft);
+    --negative: var(--dark-negative);
+    --negative-soft: var(--dark-negative-soft);
+    --warn: var(--dark-warn);
+    --warn-soft: var(--dark-warn-soft);
+    --shadow: var(--dark-shadow);
+    --shadow-lift: var(--dark-shadow-lift);
     color-scheme: dark;
   }
+}
+
+:root[data-theme="dark"] {
+  --bg: var(--dark-bg);
+  --surface: var(--dark-surface);
+  --surface-2: var(--dark-surface-2);
+  --border: var(--dark-border);
+  --border-strong: var(--dark-border-strong);
+  --text: var(--dark-text);
+  --muted: var(--dark-muted);
+  --faint: var(--dark-faint);
+  --accent-ink: var(--dark-accent-ink);
+  --on-positive: var(--dark-on-positive);
+  --positive: var(--dark-positive);
+  --positive-soft: var(--dark-positive-soft);
+  --negative: var(--dark-negative);
+  --negative-soft: var(--dark-negative-soft);
+  --warn: var(--dark-warn);
+  --warn-soft: var(--dark-warn-soft);
+  --shadow: var(--dark-shadow);
+  --shadow-lift: var(--dark-shadow-lift);
+  color-scheme: dark;
 }
 
 *, *::before, *::after { box-sizing: border-box; }
