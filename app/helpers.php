@@ -157,3 +157,21 @@ function validate_pin(string $pin, ?string &$error = null, int $min = 4, int $ma
     }
     return true;
 }
+
+/**
+ * Vollstaendige Adresse der Anwendung, z. B.
+ * https://kinderarbeit.thiesreinhold.de/
+ */
+function base_url(): string
+{
+    $scheme = is_https() ? 'https' : 'http';
+    $host   = $_SERVER['HTTP_HOST'] ?? 'localhost';
+    $path   = rtrim(str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME'] ?? '/')), '/');
+    return $scheme . '://' . $host . $path . '/';
+}
+
+/** Persoenlicher Zugangslink zu einem Token. */
+function access_link(string $token): string
+{
+    return base_url() . '?z=' . $token;
+}

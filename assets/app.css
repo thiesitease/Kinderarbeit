@@ -465,6 +465,24 @@ a:hover { color: color-mix(in srgb, var(--accent-ink) 75%, var(--text)); }
 
 .emoji-picker { display: flex; flex-wrap: wrap; gap: .35rem; margin-top: .45rem; }
 
+/* Persoenlicher Zugangslink in der Profilkarte. */
+.linkbox {
+  margin-top: .9rem; padding: .7rem .8rem;
+  border: 1px dashed var(--border-strong); border-radius: 12px;
+  background: var(--surface-2);
+}
+.linkbox--new {
+  border-style: solid;
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+.linkbox__field {
+  margin-top: .45rem;
+  font-size: .82rem; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  background: var(--surface);
+}
+.linkbox .field__hint { margin-top: .5rem; }
+
 /* Aufklappbarer Symbolwaehler – haelt die Profilkarten kurz. */
 .reveal > summary {
   cursor: pointer; list-style: none;

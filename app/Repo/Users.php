@@ -92,6 +92,46 @@ final class Users
             ->fetchAll();
     }
 
+    /**
+     * Persoenlichen Zugangslink erzeugen. Ein vorhandener Link wird dabei
+     * ungueltig – wer den alten hat, kommt nicht mehr hinein.
+     */
+    public static function createToken(int $id): string
+    {
+        $token = random_token(16);
+        Database::pdo()->prepare(
+            'UPDATE users SET access_token = :token, token_created_at = :now, token_used_at = NULL WHERE id = :id'
+        )->execute(['token' => $token, 'now' => now(), 'id' => $id]);
+        return $token;
+    }
+
+    /** Zugangslink zurueckziehen. */
+    public static function clearToken(int $id): void
+    {
+        Database::pdo()->prepare(
+            'UPDATE users SET access_token = NULL, token_created_at = NULL, token_used_at = NULL WHERE id = :id'
+        )->execute(['id' => $id]);
+    }
+
+    /** Profil zu einem Zugangslink finden. */
+    public static function findByToken(string $token): ?array
+    {
+        if (!preg_match('/^[a-f0-9]{32}$/', $token)) {
+            return null;
+        }
+        $stmt = Database::pdo()->prepare('SELECT * FROM users WHERE access_token = :token AND is_active = 1');
+        $stmt->execute(['token' => $token]);
+        return $stmt->fetch() ?: null;
+    }
+
+    /** Nutzung eines Zugangslinks festhalten. */
+    public static function recordTokenUse(int $id): void
+    {
+        Database::pdo()->prepare(
+            'UPDATE users SET token_used_at = :now, last_login_at = :now, failed_logins = 0, locked_until = NULL WHERE id = :id'
+        )->execute(['now' => now(), 'id' => $id]);
+    }
+
     /** Sperre eines Profils vorzeitig aufheben. */
     public static function unlock(int $id): void
     {

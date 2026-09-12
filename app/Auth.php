@@ -54,10 +54,45 @@ final class Auth
         return (self::user()['role'] ?? '') === 'child';
     }
 
-    /** Muss der Benutzer seine Standard-PIN noch aendern? */
+    /**
+     * Muss der Benutzer seine Standard-PIN noch aendern?
+     *
+     * Wer ueber den persoenlichen Link hereinkommt, braucht keine PIN – der
+     * Link ist bereits der Nachweis. Sonst waere der bequeme Zugang genau
+     * das nicht mehr.
+     */
     public static function mustChangePin(): bool
     {
+        if (!empty($_SESSION['via_link'])) {
+            return false;
+        }
         return (int)(self::user()['must_change_pin'] ?? 0) === 1;
+    }
+
+    /** Wurde diese Sitzung ueber einen Zugangslink geoeffnet? */
+    public static function viaLink(): bool
+    {
+        return !empty($_SESSION['via_link']);
+    }
+
+    /**
+     * Anmeldung ueber einen persoenlichen Zugangslink.
+     * Der Token selbst ist der Nachweis, deshalb wird keine PIN abgefragt.
+     */
+    public static function attemptToken(string $token): bool
+    {
+        $user = Users::findByToken($token);
+        if (!$user) {
+            return false;
+        }
+
+        Users::recordTokenUse((int)$user['id']);
+        session_regenerate_id(true);
+        $_SESSION['user_id']  = (int)$user['id'];
+        $_SESSION['via_link'] = true;
+        self::$user = null;
+
+        return true;
     }
 
     /**

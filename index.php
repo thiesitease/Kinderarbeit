@@ -28,6 +28,19 @@ require APP_DIR . '/Controller/FamilyController.php';
 Database::pdo();
 Billing::run();
 
+// Persoenlicher Zugangslink (?z=...). Nach der Anmeldung wird sofort
+// weitergeleitet, damit der Token nicht in der Adresszeile stehen bleibt.
+$token = param('z');
+if ($token !== '') {
+    if (Auth::attemptToken($token)) {
+        $user = Auth::user();
+        Flash::success('Hallo ' . $user['name'] . '!');
+    } else {
+        Flash::error('Dieser Link gilt nicht mehr. Bitte Mama oder Papa um einen neuen.');
+    }
+    redirect('start');
+}
+
 $page = param('p', 'start');
 
 View::share('page', $page);

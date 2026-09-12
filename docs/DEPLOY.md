@@ -84,7 +84,7 @@ Die Datenbank legt sich beim ersten Aufruf selbst an.
 ## 5. Erster Aufruf
 
 `https://kinderarbeit.thiesreinhold.de` öffnen. Es erscheint die Profilauswahl
-mit Emilius, Julius, Bruno, Birgitt und Thies.
+mit Emilius, Julius, Bruno, Birgitta und Thies.
 
 Start-PINs – gelten nur für die erste Anmeldung, danach fragt die Anwendung
 sofort nach einer eigenen PIN:
@@ -94,12 +94,26 @@ sofort nach einer eigenen PIN:
 | Emilius | `1111` |
 | Julius | `2222` |
 | Bruno | `3333` |
-| Birgitt | `4444` |
+| Birgitta | `4444` |
 | Thies | `5555` |
 
 > Am besten meldet ihr euch direkt nacheinander mit allen fünf Profilen an und
 > setzt die eigenen PINs. Solange das nicht passiert ist, weist die
 > Elternübersicht oben darauf hin.
+
+### Zugangslinks verschicken
+
+Als Thies oder Birgitta unter **Familie** für jedes Kind einen persönlichen
+Zugangslink erzeugen und per WhatsApp verschicken. Wer den Link öffnet, ist
+sofort angemeldet – ohne PIN. Der Link gilt, bis er neu erzeugt oder
+zurückgezogen wird.
+
+Notfalls geht das auch per SSH:
+
+```bash
+php bin/zugangslink.php             # alle Links anzeigen
+php bin/zugangslink.php Emilius     # neuen Link erzeugen
+```
 
 ---
 
@@ -156,7 +170,8 @@ cd /htdocs/kinderarbeit
 git pull
 ```
 
-Das Schema aktualisiert sich beim nächsten Aufruf selbst (`CREATE TABLE IF NOT EXISTS`).
+Das Schema aktualisiert sich beim nächsten Aufruf selbst: fehlende Tabellen
+werden angelegt, später hinzugekommene Spalten nachgezogen.
 Die Datei `data/kinderarbeit.sqlite` wird dabei nie überschrieben – sie steht in
 `.gitignore` und bleibt unangetastet.
 
@@ -172,6 +187,8 @@ Die Datei `data/kinderarbeit.sqlite` wird dabei nie überschrieben – sie steht
 | Weiße Seite | PHP-Version zu alt; im Panel auf PHP 8.2 stellen |
 | Das Design fehlt | `assets/` wurde nicht mit hochgeladen |
 | Niemand kommt mehr rein | `php bin/reset-pin.php Thies 4711` per SSH |
+| Ein Zugangslink ist in falsche Hände geraten | unter **Familie** „Neu erzeugen“ – der alte Link ist sofort tot |
+| Zugangslink führt zu „Dieser Link gilt nicht mehr“ | er wurde neu erzeugt oder zurückgezogen; einen frischen verschicken |
 | Beträge doppelt gebucht | sollte nicht passieren; `php bin/selftest.php` ausführen und melden |
 
 ---
