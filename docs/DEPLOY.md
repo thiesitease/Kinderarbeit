@@ -121,6 +121,22 @@ kommt auf den Server).
 
 **2. Öffentlichen Schlüssel auf dem Server erlauben**
 
+> **Bei manitu geht das über den Kundenbereich, nicht über die Kommandozeile.**
+> Der Server dort erlaubt ausschließlich die Anmeldung per Schlüssel, kein
+> Passwort – erkennbar an der Meldung `Permission denied (publickey).` Damit
+> lässt sich der Schlüssel nicht per SSH hinterlegen, denn genau dafür bräuchte
+> man ja schon einen funktionierenden Zugang.
+>
+> Stattdessen im manitu-Kundenbereich den Bereich für SSH-Schlüssel öffnen und
+> dort den Inhalt von `kinderarbeit_deploy.pub` einfügen – eine einzige Zeile,
+> die mit `ssh-ed25519 AAAA…` beginnt und mit dem Kommentar endet.
+>
+> Der Benutzername hat bei manitu die Form `webspace\benutzer`, also zum
+> Beispiel `pete\thies`. Genau so gehört er in das Secret `SSH_USER` – mit
+> Backslash, ohne Anführungszeichen.
+
+Auf Servern, die auch Passwörter zulassen, geht es direkt von der Kommandozeile:
+
 *macOS und Linux:*
 
 ```bash
@@ -347,7 +363,7 @@ Die Datei `data/kinderarbeit.sqlite` wird dabei nie überschrieben – sie steht
 | GitHub-Lauf meldet „Host key verification failed“ | `SSH_KNOWN_HOSTS` passt nicht mehr zum Server – Secret löschen, einmal laufen lassen, neuen Wert aus dem Protokoll übernehmen |
 | GitHub-Lauf: „Network is unreachable“ | `SSH_HOST` enthält etwas anderes als den reinen Hostnamen (kein `https://`, kein Pfad, kein Port), oder der Server ist nur über IPv6 erreichbar – GitHub-Runner können kein IPv6 |
 | GitHub-Lauf: „ssh-keyscan kam leer zurück“ | Falscher Port – manche Hoster nutzen nicht 22. Richtigen Wert als `SSH_PORT` hinterlegen |
-| GitHub-Lauf: „Permission denied (publickey)“ | Der öffentliche Schlüssel fehlt auf dem Server (Schritt 2), oder `SSH_USER` stimmt nicht |
+| GitHub-Lauf oder lokal: „Permission denied (publickey)“ | Gute Nachricht – Host, Port und Netzwerk stimmen, nur der Schlüssel wird nicht akzeptiert. Er fehlt auf dem Server (Schritt 2) oder `SSH_USER` ist unvollständig (bei manitu mit Backslash: `webspace\benutzer`) |
 | GitHub-Lauf bricht bei „Verbindung testen“ ab | Die Zeile direkt über der Fehlermeldung nennt die Ursache – der Lauf listet die drei häufigsten Fälle gleich mit auf |
 | PowerShell: „ssh-copy-id wurde nicht als Name eines Cmdlet erkannt“ | Das gibt es unter Windows nicht – die beiden PowerShell-Zeilen aus Schritt 2 benutzen |
 | Schlüssel liegt im Projektverzeichnis statt unter `.ssh` | PowerShell löst `~` nicht auf; mit `$HOME` statt `~` neu erzeugen |
