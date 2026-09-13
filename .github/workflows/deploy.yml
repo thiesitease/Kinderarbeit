@@ -191,8 +191,16 @@ jobs:
           cd "$ziel" || { echo "FEHLT"; exit 0; }
           # Unsere eigene Installation erkennen wir an diesen beiden.
           if [ -f index.php ] && [ -d app ]; then echo "BEKANNT"; exit 0; fi
-          # Sonst darf höchstens die Platzhalterseite des Hosters dort liegen.
-          fremd=$(ls -A | grep -vx 'index.html' | grep -vx '.well-known')
+          # Sonst dürfen dort nur die Dateien liegen, die ein Hoster beim
+          # Anlegen einer Subdomain selbst hinterlässt. Alles andere könnte
+          # eine fremde Website sein - und die soll --delete nicht treffen.
+          fremd=$(ls -A \
+            | grep -vx 'index.html' \
+            | grep -vx 'index.htm' \
+            | grep -vx 'robots.txt' \
+            | grep -vx 'sitemap.xml' \
+            | grep -vx 'favicon.ico' \
+            | grep -vx '.well-known')
           if [ -z "$fremd" ]; then
             echo "LEER"
           else
