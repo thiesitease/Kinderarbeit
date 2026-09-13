@@ -203,6 +203,46 @@ jobs:
           echo "        SSH_KNOWN_HOSTS passt nicht mehr zum Server."
           exit 1
 
+      - name: Zielverzeichnis prüfen
+        if: steps.secrets.outputs.bereit == 'ja'
+        env:
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+          SSH_USER: ${{ secrets.SSH_USER }}
+        run: |
+          # Gleich wird mit --delete übertragen. Zeigt DEPLOY_PATH versehentlich
+          # eine Ebene zu hoch – etwa auf das Verzeichnis, in dem alle Websites
+          # des Pakets liegen – würde das die anderen Seiten löschen.
+          # Deshalb vorher nachsehen, was dort steht.
+          befund=$(ssh "$SSH_USER@ziel" "bash -s -- '$DEPLOY_PATH'" <<'ENTFERNT'
+          ziel="$1"
+          [ -d "$ziel" ] || { echo "FEHLT"; exit 0; }
+          cd "$ziel" || { echo "FEHLT"; exit 0; }
+          # Unsere eigene Installation erkennen wir an diesen beiden.
+          if [ -f index.php ] && [ -d app ]; then echo "BEKANNT"; exit 0; fi
+          # Sonst darf höchstens die Platzhalterseite des Hosters dort liegen.
+          fremd=$(ls -A | grep -vx 'index.html' | grep -vx '.well-known' | wc -l)
+          if [ "$fremd" -eq 0 ]; then echo "LEER"; else echo "FREMD $fremd"; fi
+          ENTFERNT
+          )
+
+          case "$befund" in
+            BEKANNT)
+              echo "Zielverzeichnis enthält bereits diese Anwendung – wird aktualisiert." ;;
+            LEER)
+              echo "Zielverzeichnis ist leer oder enthält nur die Platzhalterseite – erste Veröffentlichung." ;;
+            FEHLT)
+              echo "::error::Das Verzeichnis aus DEPLOY_PATH gibt es auf dem Server nicht."
+              echo "Prüfen mit: ssh BENUTZER@SERVER 'ls -la <pfad>'"
+              exit 1 ;;
+            *)
+              echo "::error::Im Zielverzeichnis liegen fremde Dateien ($befund Einträge)."
+              echo "Das Übertragen mit --delete würde sie löschen, deshalb wird hier abgebrochen."
+              echo "Zeigt DEPLOY_PATH vielleicht eine Ebene zu hoch, also auf das Verzeichnis,"
+              echo "in dem alle Websites des Pakets liegen? Es muss auf das Verzeichnis genau"
+              echo "dieser Subdomain zeigen."
+              exit 1 ;;
+          esac
+
       - name: Dateien übertragen
         if: steps.secrets.outputs.bereit == 'ja'
         env:
