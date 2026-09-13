@@ -192,8 +192,13 @@ jobs:
           # Unsere eigene Installation erkennen wir an diesen beiden.
           if [ -f index.php ] && [ -d app ]; then echo "BEKANNT"; exit 0; fi
           # Sonst darf höchstens die Platzhalterseite des Hosters dort liegen.
-          fremd=$(ls -A | grep -vx 'index.html' | grep -vx '.well-known' | wc -l)
-          if [ "$fremd" -eq 0 ]; then echo "LEER"; else echo "FREMD $fremd"; fi
+          fremd=$(ls -A | grep -vx 'index.html' | grep -vx '.well-known')
+          if [ -z "$fremd" ]; then
+            echo "LEER"
+          else
+            echo "FREMD"
+            ls -la
+          fi
           ENTFERNT
           )
 
@@ -210,21 +215,28 @@ jobs:
             exit 1
           fi
 
-          case "$befund" in
+          urteil=$(printf '%s\n' "$befund" | head -1)
+
+          case "$urteil" in
             BEKANNT)
               echo "Zielverzeichnis enthält bereits diese Anwendung – wird aktualisiert." ;;
             LEER)
               echo "Zielverzeichnis ist leer oder enthält nur die Platzhalterseite – erste Veröffentlichung." ;;
             FEHLT)
               echo "::error::Das Verzeichnis aus DEPLOY_PATH gibt es auf dem Server nicht."
-              echo "Prüfen mit: ssh BENUTZER@SERVER 'ls -la <pfad>'"
               exit 1 ;;
             *)
-              echo "::error::Im Zielverzeichnis liegen fremde Dateien ($befund Einträge)."
+              echo "::error::Im Zielverzeichnis liegen Dateien, die nicht von dieser Anwendung stammen."
               echo "Das Übertragen mit --delete würde sie löschen, deshalb wird hier abgebrochen."
+              echo
+              echo "Das steht dort:"
+              printf '%s\n' "$befund" | tail -n +2 | sed 's/^/  /'
+              echo
               echo "Zeigt DEPLOY_PATH vielleicht eine Ebene zu hoch, also auf das Verzeichnis,"
               echo "in dem alle Websites des Pakets liegen? Es muss auf das Verzeichnis genau"
               echo "dieser Subdomain zeigen."
+              echo "Gehören die Dateien dorthin und dürfen weg, einmal von Hand löschen –"
+              echo "danach läuft der Deploy durch."
               exit 1 ;;
           esac
 
