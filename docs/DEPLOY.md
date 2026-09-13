@@ -65,36 +65,73 @@ Einmal einrichten, danach veröffentlicht jeder Push von allein.
 Der Schlüssel liegt dabei verschlüsselt bei GitHub; niemand außer dir
 bekommt ihn je zu sehen.
 
+> In allen folgenden Befehlen stehen `BENUTZER` und `SERVER` für die echten
+> Werte aus dem manitu-Kundenbereich – die müssen eingesetzt werden.
+
 **1. Schlüsselpaar nur für das Veröffentlichen erzeugen**
 
-Auf dem eigenen Rechner – ohne Passwort, damit die Automatik ihn benutzen kann:
+Ohne Passwort, damit die Automatik ihn benutzen kann.
+
+*macOS und Linux:*
 
 ```bash
 ssh-keygen -t ed25519 -C "github-deploy kinderarbeit" -f ~/.ssh/kinderarbeit_deploy -N ""
 ```
 
+*Windows (PowerShell):* PowerShell löst die Tilde bei fremden Programmen
+**nicht** auf – deshalb `$HOME` verwenden, sonst landet der Schlüssel im
+aktuellen Verzeichnis:
+
+```powershell
+mkdir -Force "$HOME\.ssh" | Out-Null
+ssh-keygen -t ed25519 -C "github-deploy kinderarbeit" -f "$HOME\.ssh\kinderarbeit_deploy" -N '""'
+```
+
 Es entstehen zwei Dateien: `kinderarbeit_deploy` (privat, bleibt bei dir und
-kommt gleich zu GitHub) und `kinderarbeit_deploy.pub` (öffentlich, kommt auf
-den Server).
+kommt gleich als Secret zu GitHub) und `kinderarbeit_deploy.pub` (öffentlich,
+kommt auf den Server).
+
+> **Ist er versehentlich im Projektverzeichnis gelandet?** Dann suchen und
+> wegräumen – ein privater Schlüssel hat in einem Git-Verzeichnis nichts zu
+> suchen:
+>
+> ```powershell
+> Get-ChildItem -Path . -Filter "kinderarbeit_deploy*" -Recurse -Force | Select-Object FullName
+> ```
+>
+> Die `.gitignore` fängt diesen Fall zwar ab, aber besser trotzdem löschen und
+> mit dem Befehl oben neu erzeugen.
 
 **2. Öffentlichen Schlüssel auf dem Server erlauben**
+
+*macOS und Linux:*
 
 ```bash
 ssh-copy-id -i ~/.ssh/kinderarbeit_deploy.pub BENUTZER@SERVER
 ```
 
-Falls `ssh-copy-id` fehlt, geht es auch von Hand:
+*Windows (PowerShell):* `ssh-copy-id` gibt es dort nicht. Diese zwei Zeilen
+machen dasselbe:
 
-```bash
-cat ~/.ssh/kinderarbeit_deploy.pub | ssh BENUTZER@SERVER \
-  'mkdir -p ~/.ssh && chmod 700 ~/.ssh && cat >> ~/.ssh/authorized_keys && chmod 600 ~/.ssh/authorized_keys'
+```powershell
+$pub = (Get-Content "$HOME\.ssh\kinderarbeit_deploy.pub" -Raw).Trim()
+ssh BENUTZER@SERVER "mkdir -p ~/.ssh; chmod 700 ~/.ssh; echo '$pub' >> ~/.ssh/authorized_keys; chmod 600 ~/.ssh/authorized_keys"
 ```
+
+Dabei fragt der Server noch einmal nach deinem normalen Passwort – danach
+nicht mehr.
 
 Kurz prüfen, dass es klappt:
 
 ```bash
 ssh -i ~/.ssh/kinderarbeit_deploy BENUTZER@SERVER 'echo Verbindung steht && pwd'
 ```
+
+```powershell
+ssh -i "$HOME\.ssh\kinderarbeit_deploy" BENUTZER@SERVER 'echo Verbindung steht && pwd'
+```
+
+Das `pwd` verrät gleich den Pfad, den du für `DEPLOY_PATH` brauchst.
 
 **3. Secrets bei GitHub hinterlegen**
 
@@ -118,8 +155,12 @@ Zwei weitere sind freiwillig:
 Den privaten Schlüssel bekommst du so in die Zwischenablage:
 
 ```bash
-pbcopy < ~/.ssh/kinderarbeit_deploy      # macOS
-xclip -sel clip < ~/.ssh/kinderarbeit_deploy   # Linux
+pbcopy < ~/.ssh/kinderarbeit_deploy             # macOS
+xclip -sel clip < ~/.ssh/kinderarbeit_deploy    # Linux
+```
+
+```powershell
+Get-Content "$HOME\.ssh\kinderarbeit_deploy" -Raw | Set-Clipboard   # Windows
 ```
 
 **4. Veröffentlichen**
@@ -287,6 +328,8 @@ Die Datei `data/kinderarbeit.sqlite` wird dabei nie überschrieben – sie steht
 | GitHub-Lauf bricht bei „SSH vorbereiten“ ab | Schlüssel unvollständig kopiert – `SSH_KEY` muss die Zeilen `-----BEGIN` und `-----END` enthalten |
 | GitHub-Lauf meldet „Permission denied (publickey)“ | öffentlicher Schlüssel fehlt in `~/.ssh/authorized_keys` auf dem Server, oder `SSH_USER` stimmt nicht |
 | GitHub-Lauf meldet „Host key verification failed“ | `SSH_KNOWN_HOSTS` passt nicht mehr zum Server – Secret löschen, einmal laufen lassen, neuen Wert aus dem Protokoll übernehmen |
+| PowerShell: „ssh-copy-id wurde nicht als Name eines Cmdlet erkannt“ | Das gibt es unter Windows nicht – die beiden PowerShell-Zeilen aus Schritt 2 benutzen |
+| Schlüssel liegt im Projektverzeichnis statt unter `.ssh` | PowerShell löst `~` nicht auf; mit `$HOME` statt `~` neu erzeugen |
 | Ein Zugangslink ist in falsche Hände geraten | unter **Familie** „Neu erzeugen“ – der alte Link ist sofort tot |
 | Zugangslink führt zu „Dieser Link gilt nicht mehr“ | er wurde neu erzeugt oder zurückgezogen; einen frischen verschicken |
 | Beträge doppelt gebucht | sollte nicht passieren; `php bin/selftest.php` ausführen und melden |
