@@ -36,7 +36,7 @@ jobs:
     name: Logik prüfen
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: PHP mit SQLite bereitstellen
         run: |
@@ -70,7 +70,7 @@ jobs:
     outputs:
       bereit: ${{ steps.secrets.outputs.bereit }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Sind die Secrets hinterlegt?
         id: secrets
