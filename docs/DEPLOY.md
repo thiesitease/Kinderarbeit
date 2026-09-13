@@ -325,14 +325,19 @@ ob sie tatsächlich hochgeladen wurde und ob `AllowOverride` aktiv ist.
 
 ---
 
-## 7. Optional: Cronjob für feste Ausgaben
+## 7. Optional: täglicher Aufruf für feste Ausgaben
 
-Die Anwendung bucht fällige Ausgaben beim ersten Seitenaufruf des Tages selbst ab.
-Wer auf Nummer sicher gehen will, richtet zusätzlich einen täglichen Cronjob ein:
+**Wird nicht gebraucht.** Die Anwendung bucht fällige Ausgaben beim ersten
+Seitenaufruf des Tages von selbst ab – genau deshalb ist sie so gebaut.
 
-```
-0 6 * * * /usr/bin/php /htdocs/kinderarbeit/bin/cron.php >/dev/null 2>&1
-```
+Wer trotzdem eine zusätzliche Absicherung will: **kein `crontab` anlegen.**
+Die AGB von manitu untersagen eigene Cronjobs ausdrücklich; dafür gibt es im
+Kundenbereich das Feature **Cronjob**. Dort eintragen:
+
+| Feld | Wert |
+|---|---|
+| Befehl | `/usr/bin/php /home/sites/site100029489/web/kinderarbeit.thiesreinhold.de/bin/cron.php` |
+| Zeitpunkt | täglich, z. B. 6 Uhr |
 
 ---
 
@@ -348,11 +353,15 @@ sqlite3 data/kinderarbeit.sqlite ".backup 'sicherung-$(date +%F).sqlite'"
 scp BENUTZER@SERVER:/htdocs/kinderarbeit/data/kinderarbeit.sqlite ./
 ```
 
-Eine tägliche Sicherung per Cron:
+Für eine tägliche Sicherung ebenfalls das Feature **Cronjob** im Kundenbereich
+nutzen, nicht `crontab`:
 
 ```
-30 3 * * * sqlite3 /htdocs/kinderarbeit/data/kinderarbeit.sqlite ".backup '/htdocs/backups/kinderarbeit-$(date +\%F).sqlite'"
+/usr/bin/sqlite3 /home/sites/site100029489/web/kinderarbeit.thiesreinhold.de/data/kinderarbeit.sqlite ".backup '/home/sites/site100029489/sicherungen/kinderarbeit.sqlite'"
 ```
+
+Das Zielverzeichnis vorher anlegen, und zwar **außerhalb** von `web/` – sonst
+wäre die Sicherung über den Browser abrufbar.
 
 ---
 
@@ -369,6 +378,24 @@ Die Datei `data/kinderarbeit.sqlite` wird dabei nie überschrieben – sie steht
 `.gitignore` und bleibt unangetastet.
 
 ---
+
+## Was auf dem Server läuft – und was nicht
+
+manitu erlaubt SSH nur unter Auflagen. Was diese Anwendung und ihr
+Veröffentlichen dort tun, bleibt in diesem Rahmen:
+
+| Auflage | Wie das hier aussieht |
+|---|---|
+| Keine dauerhaften Prozesse oder Hintergrundprozesse | Über SSH laufen nur kurze Aufrufe: ein `ls`, die Übertragung durch `rsync`, ein einmaliger Selbsttest. Jeder davon endet innerhalb von Sekunden. Die Anwendung selbst ist ganz normales PHP und läuft nur, solange eine Seite aufgerufen wird |
+| Nichts darf auf einem Port lauschen | Kein einziger Prozess öffnet einen Port. Die Datenbank ist eine Datei, kein Serverdienst – deshalb SQLite und nicht MySQL |
+| Keine eigenen Cronjobs | Es wird keiner gebraucht; fällige Abbuchungen erledigt der erste Seitenaufruf des Tages. Wer trotzdem einen will, nimmt das Feature Cronjob im Kundenbereich |
+| Keine Container | Keine im Spiel. Kein Docker, kein Composer, kein Node – nur PHP-Dateien |
+| Keine erweiterten Rechte | Nirgends `sudo` oder `su`. Geschrieben wird ausschließlich im eigenen Web-Verzeichnis |
+
+**Finger weg von der SSH-Erweiterung in Visual Studio Code** für diesen Server.
+Sie installiert dort unaufgefordert eine dauerhaft laufende Server-Komponente –
+das verstößt gegen die AGB und zieht laut manitu kostenpflichtigen Support nach
+sich. Zum Bearbeiten der Dateien lokal arbeiten und per Git veröffentlichen.
 
 ## Wenn etwas nicht funktioniert
 
