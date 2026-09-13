@@ -183,7 +183,7 @@ Zwei weitere sind freiwillig:
 | Name | Wofür |
 |---|---|
 | `SSH_PORT` | nur falls der Server nicht auf Port 22 hört |
-| `SSH_KNOWN_HOSTS` | Serverschlüssel – siehe Schritt 5 |
+| `SSH_KNOWN_HOSTS` | Serverschlüssel – **erforderlich**, siehe Schritt 5 |
 
 Den privaten Schlüssel bekommst du so in die Zwischenablage:
 
@@ -225,23 +225,32 @@ Von Hand starten geht unter **Actions → Veröffentlichen → Run workflow**.
 Solange die Secrets fehlen, wird nur geprüft und der Deploy übersprungen –
 der Lauf bleibt grün und sagt im Protokoll, was noch fehlt.
 
-**5. Absichern: Serverschlüssel festnageln**
+**5. Serverschlüssel hinterlegen (erforderlich)**
 
-Ohne `SSH_KNOWN_HOSTS` übernimmt der erste Lauf den Serverschlüssel ungeprüft.
-Er schreibt ihn dafür ins Protokoll, zwischen zwei Markierungen:
-
-```
----8<--- SSH_KNOWN_HOSTS ---8<---
-ssh.manitu.de ssh-ed25519 AAAAC3Nza…
---->8--------------------->8---
-```
-
-Diese Zeilen als Secret `SSH_KNOWN_HOSTS` hinterlegen. Ab dann prüft jeder
-Lauf, dass er wirklich mit deinem Server spricht. Alternativ lokal holen:
+Auf dem eigenen Rechner:
 
 ```bash
-ssh-keyscan SERVER
+ssh-keyscan ngcobalt19.manitu.net
 ```
+
+```powershell
+ssh-keyscan ngcobalt19.manitu.net
+```
+
+Alle ausgegebenen Zeilen als Secret `SSH_KNOWN_HOSTS` hinterlegen
+(Kommentarzeilen mit `#` dürfen weg).
+
+Das hat zwei Gründe. Der offensichtliche: jeder Lauf prüft damit, dass er
+wirklich mit deinem Server spricht, statt den Schlüssel beim ersten Kontakt
+blind zu übernehmen.
+
+Der wichtigere ist praktischer Natur. Ohne das Secret müsste der Lauf den
+Schlüssel selbst holen – eine zusätzliche Verbindung. Manche Hoster sperren
+eine Adresse aber nach wenigen Verbindungen in kurzer Zeit, und dann scheitert
+ausgerechnet die Verbindung, auf die es ankommt. Das sieht dann nach einem
+Netzwerkproblem aus, ist aber keines: der Hoster hat schlicht dichtgemacht.
+Der Workflow macht deshalb nur noch drei Verbindungen pro Lauf statt bis zu
+neun – und bricht ohne dieses Secret gleich mit einer Erklärung ab.
 
 ### Variante C – per FTP
 
