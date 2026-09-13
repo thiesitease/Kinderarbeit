@@ -345,7 +345,10 @@ Die Datei `data/kinderarbeit.sqlite` wird dabei nie überschrieben – sie steht
 | GitHub-Lauf bricht bei „SSH vorbereiten“ ab | Schlüssel unvollständig kopiert – `SSH_KEY` muss die Zeilen `-----BEGIN` und `-----END` enthalten |
 | GitHub-Lauf meldet „Permission denied (publickey)“ | öffentlicher Schlüssel fehlt in `~/.ssh/authorized_keys` auf dem Server, oder `SSH_USER` stimmt nicht |
 | GitHub-Lauf meldet „Host key verification failed“ | `SSH_KNOWN_HOSTS` passt nicht mehr zum Server – Secret löschen, einmal laufen lassen, neuen Wert aus dem Protokoll übernehmen |
-| GitHub-Lauf bricht bei „Verbindung testen“ ab | Der öffentliche Schlüssel fehlt auf dem Server (Schritt 2), oder der private Schlüssel in `SSH_KEY` hat ein Passwort |
+| GitHub-Lauf: „Network is unreachable“ | `SSH_HOST` enthält etwas anderes als den reinen Hostnamen (kein `https://`, kein Pfad, kein Port), oder der Server ist nur über IPv6 erreichbar – GitHub-Runner können kein IPv6 |
+| GitHub-Lauf: „ssh-keyscan kam leer zurück“ | Falscher Port – manche Hoster nutzen nicht 22. Richtigen Wert als `SSH_PORT` hinterlegen |
+| GitHub-Lauf: „Permission denied (publickey)“ | Der öffentliche Schlüssel fehlt auf dem Server (Schritt 2), oder `SSH_USER` stimmt nicht |
+| GitHub-Lauf bricht bei „Verbindung testen“ ab | Die Zeile direkt über der Fehlermeldung nennt die Ursache – der Lauf listet die drei häufigsten Fälle gleich mit auf |
 | PowerShell: „ssh-copy-id wurde nicht als Name eines Cmdlet erkannt“ | Das gibt es unter Windows nicht – die beiden PowerShell-Zeilen aus Schritt 2 benutzen |
 | Schlüssel liegt im Projektverzeichnis statt unter `.ssh` | PowerShell löst `~` nicht auf; mit `$HOME` statt `~` neu erzeugen |
 | Ein Zugangslink ist in falsche Hände geraten | unter **Familie** „Neu erzeugen“ – der alte Link ist sofort tot |
