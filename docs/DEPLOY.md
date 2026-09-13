@@ -176,7 +176,7 @@ New repository secret**. Vier Stück sind nötig:
 | `SSH_HOST` | Servername aus dem manitu-Kundenbereich, z. B. `ssh.manitu.de` |
 | `SSH_USER` | Benutzername beim Hoster |
 | `SSH_KEY` | der **gesamte** Inhalt von `~/.ssh/kinderarbeit_deploy` – mit den Zeilen `-----BEGIN …` und `-----END …` |
-| `DEPLOY_PATH` | Zielverzeichnis der Subdomain, z. B. `/htdocs/kinderarbeit` |
+| `DEPLOY_PATH` | Verzeichnis **genau dieser Subdomain**, bei manitu z. B. `/home/sites/site000000000/web/kinderarbeit.example.de` |
 
 Zwei weitere sind freiwillig:
 
@@ -195,6 +195,19 @@ xclip -sel clip < ~/.ssh/kinderarbeit_deploy    # Linux
 ```powershell
 Get-Content "$HOME\.ssh\kinderarbeit_deploy" -Raw | Set-Clipboard   # Windows
 ```
+
+> **Wichtig: `DEPLOY_PATH` muss auf das Verzeichnis der Subdomain zeigen**,
+> nicht auf das darüberliegende `web/`, in dem alle Websites des Pakets
+> nebeneinander liegen. Dort würde das Übertragen mit `--delete` die anderen
+> Seiten löschen. Der Workflow prüft das Zielverzeichnis deshalb vorher und
+> bricht ab, wenn er dort fremde Dateien findet – aber verlass dich nicht
+> allein darauf.
+>
+> So findest du den richtigen Pfad auf dem Server:
+>
+> ```bash
+> grep -rl "kinderarbeit.example.de" ~/../.. --include="index.html" 2>/dev/null
+> ```
 
 **4. Veröffentlichen**
 
