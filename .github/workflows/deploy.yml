@@ -147,10 +147,14 @@ jobs:
           fi
           chmod 600 ~/.ssh/known_hosts
 
+          # Achtung: hier bewusst KEIN "User". Bei manitu enthält der
+          # Benutzername einen Backslash (webspace\benutzer), und den wertet
+          # der Konfigurationsleser von OpenSSH je nach Version als
+          # Escape-Zeichen aus. Deshalb steht er unten in jedem Aufruf als
+          # "$SSH_USER@ziel" davor – dort ist er unkritisch.
           {
             echo "Host ziel"
             echo "  HostName $SSH_HOST"
-            echo "  User $SSH_USER"
             echo "  Port $port"
             echo "  IdentityFile ~/.ssh/id_deploy"
             echo "  IdentitiesOnly yes"
@@ -170,13 +174,15 @@ jobs:
 
       - name: Verbindung testen
         if: steps.secrets.outputs.bereit == 'ja'
+        env:
+          SSH_USER: ${{ secrets.SSH_USER }}
         run: |
           # Der Server antwortet messbar träge – ssh-keyscan brauchte im
           # Protokoll elf Sekunden. Deshalb mehrere Anläufe mit Pause,
           # statt beim ersten Zeitüberschreiten aufzugeben.
           for versuch in 1 2 3; do
             echo "Verbindungsversuch $versuch von 3 …"
-            if ssh ziel 'echo "Verbindung steht als $(whoami) auf $(hostname)"'; then
+            if ssh "$SSH_USER@ziel" 'echo "Verbindung steht als $(whoami) auf $(hostname)"'; then
               exit 0
             fi
             [ "$versuch" -lt 3 ] && sleep 15
@@ -201,6 +207,7 @@ jobs:
         if: steps.secrets.outputs.bereit == 'ja'
         env:
           DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+          SSH_USER: ${{ secrets.SSH_USER }}
         run: |
           # --delete räumt auf dem Server auf, was im Repository nicht mehr steht.
           # Die data-Ausnahmen schützen dabei die Datenbank: was ausgeschlossen
@@ -214,14 +221,15 @@ jobs:
             --exclude 'data/*.sqlite-wal' \
             --exclude 'data/*.sqlite-shm' \
             --exclude 'data/*.log' \
-            ./ "ziel:$DEPLOY_PATH/"
+            ./ "$SSH_USER@ziel:$DEPLOY_PATH/"
 
       - name: Auf dem Server einrichten und prüfen
         if: steps.secrets.outputs.bereit == 'ja'
         env:
           DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+          SSH_USER: ${{ secrets.SSH_USER }}
         run: |
-          ssh ziel "cd '$DEPLOY_PATH' && mkdir -p data && chmod 775 data && php -v && php bin/selftest.php"
+          ssh "$SSH_USER@ziel" "cd '$DEPLOY_PATH' && mkdir -p data && chmod 775 data && php -v && php bin/selftest.php"
 
   nachschauen:
     name: Seite von außen prüfen
