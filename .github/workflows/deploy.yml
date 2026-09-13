@@ -162,17 +162,27 @@ jobs:
             echo "  BatchMode yes"
             echo "  PasswordAuthentication no"
             echo "  KbdInteractiveAuthentication no"
-            echo "  ConnectTimeout 20"
+            echo "  ConnectTimeout 60"
+            echo "  ServerAliveInterval 15"
+            echo "  ServerAliveCountMax 8"
           } > ~/.ssh/config
           chmod 600 ~/.ssh/config
 
       - name: Verbindung testen
         if: steps.secrets.outputs.bereit == 'ja'
         run: |
-          if ssh ziel 'echo "Verbindung steht als $(whoami) auf $(hostname)"'; then
-            exit 0
-          fi
-          echo "::error::Die SSH-Verbindung kam nicht zustande."
+          # Der Server antwortet messbar träge – ssh-keyscan brauchte im
+          # Protokoll elf Sekunden. Deshalb mehrere Anläufe mit Pause,
+          # statt beim ersten Zeitüberschreiten aufzugeben.
+          for versuch in 1 2 3; do
+            echo "Verbindungsversuch $versuch von 3 …"
+            if ssh ziel 'echo "Verbindung steht als $(whoami) auf $(hostname)"'; then
+              exit 0
+            fi
+            [ "$versuch" -lt 3 ] && sleep 15
+          done
+
+          echo "::error::Die SSH-Verbindung kam nach drei Versuchen nicht zustande."
           echo "Die Meldung eine Zeile weiter oben sagt, woran es lag:"
           echo
           echo "  \"Network is unreachable\" oder \"Connection timed out\""
