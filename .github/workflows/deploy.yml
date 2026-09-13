@@ -1,0 +1,207 @@
+# Kinderarbeit – Veröffentlichen auf kinderarbeit.example.de
+#
+# Läuft bei jedem Push auf den Hauptbranch und lässt sich unter "Actions"
+# auch von Hand starten. Solange die Secrets fehlen, wird nur geprüft und
+# der Deploy übersprungen – dann ist noch nichts kaputt.
+#
+# Benötigte Secrets (Settings → Secrets and variables → Actions):
+#   SSH_HOST          Server, z. B. ssh.manitu.de
+#   SSH_USER          Benutzername beim Hoster
+#   SSH_KEY           privater Schlüssel (vollständiger Inhalt von id_deploy)
+#   DEPLOY_PATH       Zielverzeichnis, z. B. /htdocs/kinderarbeit
+# Freiwillig:
+#   SSH_PORT          abweichender Port, Standard 22
+#   SSH_KNOWN_HOSTS   Serverschlüssel – siehe docs/DEPLOY.md
+
+name: Veröffentlichen
+
+on:
+  push:
+    branches:
+      - claude/kinderarbeit-task-management-3s833z
+      - main
+  workflow_dispatch:
+
+# Nie zwei Deploys gleichzeitig – und einen laufenden nicht abbrechen,
+# ein halb übertragenes Verzeichnis wäre schlimmer als ein Deploy zu viel.
+concurrency:
+  group: deploy
+  cancel-in-progress: false
+
+env:
+  SITE_URL: https://kinderarbeit.example.de/
+
+jobs:
+  pruefen:
+    name: Logik prüfen
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: PHP mit SQLite bereitstellen
+        run: |
+          php -v
+          if ! php -m | grep -qi pdo_sqlite; then
+            sudo apt-get update -qq
+            sudo apt-get install -y -qq php-sqlite3
+          fi
+
+      - name: Syntax aller PHP-Dateien
+        run: |
+          fehler=0
+          anzahl=0
+          while IFS= read -r -d '' datei; do
+            anzahl=$((anzahl + 1))
+            if ! meldung=$(php -l "$datei" 2>&1); then
+              echo "::error file=$datei::$meldung"
+              fehler=1
+            fi
+          done < <(find . -name '*.php' -not -path './.git/*' -print0)
+          echo "$anzahl PHP-Dateien geprüft."
+          exit $fehler
+
+      - name: Selbsttest der Rechenlogik
+        run: php bin/selftest.php
+
+  hochladen:
+    name: Auf den Server übertragen
+    needs: pruefen
+    runs-on: ubuntu-latest
+    outputs:
+      bereit: ${{ steps.secrets.outputs.bereit }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Sind die Secrets hinterlegt?
+        id: secrets
+        env:
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_USER: ${{ secrets.SSH_USER }}
+          SSH_KEY: ${{ secrets.SSH_KEY }}
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+        run: |
+          fehlt=""
+          [ -n "$SSH_HOST" ]    || fehlt="$fehlt SSH_HOST"
+          [ -n "$SSH_USER" ]    || fehlt="$fehlt SSH_USER"
+          [ -n "$SSH_KEY" ]     || fehlt="$fehlt SSH_KEY"
+          [ -n "$DEPLOY_PATH" ] || fehlt="$fehlt DEPLOY_PATH"
+
+          if [ -n "$fehlt" ]; then
+            echo "bereit=nein" >> "$GITHUB_OUTPUT"
+            echo "::notice::Deploy übersprungen – es fehlen noch die Secrets:$fehlt"
+            echo "Anzulegen unter: Settings → Secrets and variables → Actions → New repository secret"
+            echo "Die Anleitung steht in docs/DEPLOY.md."
+          else
+            echo "bereit=ja" >> "$GITHUB_OUTPUT"
+            echo "Alle benötigten Secrets sind hinterlegt."
+          fi
+
+      - name: SSH vorbereiten
+        if: steps.secrets.outputs.bereit == 'ja'
+        env:
+          # Secrets kommen über die Umgebung statt direkt in die Befehlszeile –
+          # so kann aus ihrem Inhalt nichts als Kommando ausgeführt werden.
+          SSH_KEY: ${{ secrets.SSH_KEY }}
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_USER: ${{ secrets.SSH_USER }}
+          SSH_PORT: ${{ secrets.SSH_PORT }}
+          SSH_KNOWN_HOSTS: ${{ secrets.SSH_KNOWN_HOSTS }}
+        run: |
+          mkdir -p ~/.ssh && chmod 700 ~/.ssh
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/id_deploy
+          chmod 600 ~/.ssh/id_deploy
+
+          port="${SSH_PORT:-22}"
+
+          if [ -n "$SSH_KNOWN_HOSTS" ]; then
+            printf '%s\n' "$SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
+            echo "Serverschlüssel aus dem Secret SSH_KNOWN_HOSTS übernommen."
+          else
+            ssh-keyscan -p "$port" "$SSH_HOST" > ~/.ssh/known_hosts 2>/dev/null
+            echo "::warning::SSH_KNOWN_HOSTS ist nicht gesetzt – der Serverschlüssel wird beim ersten Kontakt ungeprüft übernommen."
+            echo "Zum Absichern genau diese Zeilen als Secret SSH_KNOWN_HOSTS hinterlegen:"
+            echo "---8<--- SSH_KNOWN_HOSTS ---8<---"
+            cat ~/.ssh/known_hosts
+            echo "--->8--------------------->8---"
+          fi
+          chmod 600 ~/.ssh/known_hosts
+
+          {
+            echo "Host ziel"
+            echo "  HostName $SSH_HOST"
+            echo "  User $SSH_USER"
+            echo "  Port $port"
+            echo "  IdentityFile ~/.ssh/id_deploy"
+            echo "  IdentitiesOnly yes"
+            echo "  StrictHostKeyChecking yes"
+          } > ~/.ssh/config
+          chmod 600 ~/.ssh/config
+
+      - name: Dateien übertragen
+        if: steps.secrets.outputs.bereit == 'ja'
+        env:
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+        run: |
+          # --delete räumt auf dem Server auf, was im Repository nicht mehr steht.
+          # Die data-Ausnahmen schützen dabei die Datenbank: was ausgeschlossen
+          # ist, löscht rsync nicht.
+          # -t überträgt Zeitstempel, sonst lädt jeder Lauf alle Dateien neu hoch.
+          rsync -rltvz --delete --chmod=D755,F644 \
+            --exclude '.git/' \
+            --exclude '.github/' \
+            --exclude '.gitignore' \
+            --exclude 'data/*.sqlite' \
+            --exclude 'data/*.sqlite-wal' \
+            --exclude 'data/*.sqlite-shm' \
+            --exclude 'data/*.log' \
+            ./ "ziel:$DEPLOY_PATH/"
+
+      - name: Auf dem Server einrichten und prüfen
+        if: steps.secrets.outputs.bereit == 'ja'
+        env:
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+        run: |
+          ssh ziel "cd '$DEPLOY_PATH' && mkdir -p data && chmod 775 data && php -v && php bin/selftest.php"
+
+  nachschauen:
+    name: Seite von außen prüfen
+    needs: hochladen
+    if: needs.hochladen.outputs.bereit == 'ja'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Erreichbarkeit und Abschottung
+        run: |
+          code() { curl -sS -o /dev/null -w '%{http_code}' --max-time 20 "$1" || echo "000"; }
+
+          start=$(code "$SITE_URL")
+          echo "Startseite: HTTP $start"
+
+          if [ "$start" = "000" ]; then
+            echo "::warning::$SITE_URL ist nicht erreichbar – steht die Subdomain schon? Prüfung übersprungen."
+            exit 0
+          fi
+
+          fehler=0
+          case "$start" in
+            200|302) echo "  ✓ Die Anwendung antwortet." ;;
+            *) echo "::error::Unerwarteter Status $start auf der Startseite."; fehler=1 ;;
+          esac
+
+          # Nichts davon darf von außen ausgeliefert werden.
+          for pfad in \
+            "data/kinderarbeit.sqlite" \
+            "data/" \
+            "app/Database.php" \
+            "app/bootstrap.php" \
+            "bin/selftest.php"
+          do
+            status=$(code "${SITE_URL}${pfad}")
+            if [ "$status" = "200" ]; then
+              echo "::error::$pfad ist öffentlich erreichbar (HTTP 200) – die .htaccess greift nicht!"
+              fehler=1
+            else
+              echo "  ✓ $pfad ist abgeschottet (HTTP $status)"
+            fi
+          done
+
+          exit $fehler

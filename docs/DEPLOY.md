@@ -41,7 +41,7 @@ Danach im selben Schritt **HTTPS aktivieren** (Let's Encrypt). Die mitgelieferte
 
 ## 3. Dateien hochladen
 
-### Variante A – per SSH (empfohlen)
+### Variante A – einmalig von Hand per SSH
 
 ```bash
 # auf dem eigenen Rechner, im Projektverzeichnis
@@ -59,7 +59,104 @@ cd /htdocs
 git clone https://github.com/thiesitease/Kinderarbeit.git kinderarbeit
 ```
 
-### Variante B – per FTP
+### Variante B – automatisch über GitHub (empfohlen für den Dauerbetrieb)
+
+Einmal einrichten, danach veröffentlicht jeder Push von allein.
+Der Schlüssel liegt dabei verschlüsselt bei GitHub; niemand außer dir
+bekommt ihn je zu sehen.
+
+**1. Schlüsselpaar nur für das Veröffentlichen erzeugen**
+
+Auf dem eigenen Rechner – ohne Passwort, damit die Automatik ihn benutzen kann:
+
+```bash
+ssh-keygen -t ed25519 -C "github-deploy kinderarbeit" -f ~/.ssh/kinderarbeit_deploy -N ""
+```
+
+Es entstehen zwei Dateien: `kinderarbeit_deploy` (privat, bleibt bei dir und
+kommt gleich zu GitHub) und `kinderarbeit_deploy.pub` (öffentlich, kommt auf
+den Server).
+
+**2. Öffentlichen Schlüssel auf dem Server erlauben**
+
+```bash
+ssh-copy-id -i ~/.ssh/kinderarbeit_deploy.pub BENUTZER@SERVER
+```
+
+Falls `ssh-copy-id` fehlt, geht es auch von Hand:
+
+```bash
+cat ~/.ssh/kinderarbeit_deploy.pub | ssh BENUTZER@SERVER \
+  'mkdir -p ~/.ssh && chmod 700 ~/.ssh && cat >> ~/.ssh/authorized_keys && chmod 600 ~/.ssh/authorized_keys'
+```
+
+Kurz prüfen, dass es klappt:
+
+```bash
+ssh -i ~/.ssh/kinderarbeit_deploy BENUTZER@SERVER 'echo Verbindung steht && pwd'
+```
+
+**3. Secrets bei GitHub hinterlegen**
+
+Im Repository: **Settings → Secrets and variables → Actions →
+New repository secret**. Vier Stück sind nötig:
+
+| Name | Inhalt |
+|---|---|
+| `SSH_HOST` | Servername aus dem manitu-Kundenbereich, z. B. `ssh.manitu.de` |
+| `SSH_USER` | Benutzername beim Hoster |
+| `SSH_KEY` | der **gesamte** Inhalt von `~/.ssh/kinderarbeit_deploy` – mit den Zeilen `-----BEGIN …` und `-----END …` |
+| `DEPLOY_PATH` | Zielverzeichnis der Subdomain, z. B. `/htdocs/kinderarbeit` |
+
+Zwei weitere sind freiwillig:
+
+| Name | Wofür |
+|---|---|
+| `SSH_PORT` | nur falls der Server nicht auf Port 22 hört |
+| `SSH_KNOWN_HOSTS` | Serverschlüssel – siehe Schritt 5 |
+
+Den privaten Schlüssel bekommst du so in die Zwischenablage:
+
+```bash
+pbcopy < ~/.ssh/kinderarbeit_deploy      # macOS
+xclip -sel clip < ~/.ssh/kinderarbeit_deploy   # Linux
+```
+
+**4. Veröffentlichen**
+
+Ab jetzt läuft bei jedem Push auf den Hauptbranch automatisch:
+
+1. **Logik prüfen** – Syntax aller PHP-Dateien und der Selbsttest
+2. **Auf den Server übertragen** – `rsync` mit `--delete`; die Datenbank in
+   `data/` ist ausgenommen und bleibt unangetastet. Danach läuft der
+   Selbsttest noch einmal auf dem Server
+3. **Seite von außen prüfen** – ist die Startseite erreichbar, und sind
+   `data/` und `app/` wirklich abgeschottet?
+
+Von Hand starten geht unter **Actions → Veröffentlichen → Run workflow**.
+
+Solange die Secrets fehlen, wird nur geprüft und der Deploy übersprungen –
+der Lauf bleibt grün und sagt im Protokoll, was noch fehlt.
+
+**5. Absichern: Serverschlüssel festnageln**
+
+Ohne `SSH_KNOWN_HOSTS` übernimmt der erste Lauf den Serverschlüssel ungeprüft.
+Er schreibt ihn dafür ins Protokoll, zwischen zwei Markierungen:
+
+```
+---8<--- SSH_KNOWN_HOSTS ---8<---
+ssh.manitu.de ssh-ed25519 AAAAC3Nza…
+--->8--------------------->8---
+```
+
+Diese Zeilen als Secret `SSH_KNOWN_HOSTS` hinterlegen. Ab dann prüft jeder
+Lauf, dass er wirklich mit deinem Server spricht. Alternativ lokal holen:
+
+```bash
+ssh-keyscan SERVER
+```
+
+### Variante C – per FTP
 
 Den gesamten Inhalt des Projektverzeichnisses in den Subdomain-Ordner
 hochladen – **einschließlich der Datei `.htaccess`** (viele FTP-Programme
@@ -187,6 +284,9 @@ Die Datei `data/kinderarbeit.sqlite` wird dabei nie überschrieben – sie steht
 | Weiße Seite | PHP-Version zu alt; im Panel auf PHP 8.2 stellen |
 | Das Design fehlt | `assets/` wurde nicht mit hochgeladen |
 | Niemand kommt mehr rein | `php bin/reset-pin.php Thies 4711` per SSH |
+| GitHub-Lauf bricht bei „SSH vorbereiten“ ab | Schlüssel unvollständig kopiert – `SSH_KEY` muss die Zeilen `-----BEGIN` und `-----END` enthalten |
+| GitHub-Lauf meldet „Permission denied (publickey)“ | öffentlicher Schlüssel fehlt in `~/.ssh/authorized_keys` auf dem Server, oder `SSH_USER` stimmt nicht |
+| GitHub-Lauf meldet „Host key verification failed“ | `SSH_KNOWN_HOSTS` passt nicht mehr zum Server – Secret löschen, einmal laufen lassen, neuen Wert aus dem Protokoll übernehmen |
 | Ein Zugangslink ist in falsche Hände geraten | unter **Familie** „Neu erzeugen“ – der alte Link ist sofort tot |
 | Zugangslink führt zu „Dieser Link gilt nicht mehr“ | er wurde neu erzeugt oder zurückgezogen; einen frischen verschicken |
 | Beträge doppelt gebucht | sollte nicht passieren; `php bin/selftest.php` ausführen und melden |
