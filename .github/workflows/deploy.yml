@@ -258,7 +258,13 @@ jobs:
           # Die data-Ausnahmen schützen dabei die Datenbank: was ausgeschlossen
           # ist, löscht rsync nicht.
           # -t überträgt Zeitstempel, sonst lädt jeder Lauf alle Dateien neu hoch.
-          rsync -rltvz --delete --chmod=D755,F644 \
+          # --omit-dir-times lässt dabei die Verzeichnisse aus. Sonst versucht
+          # rsync, auch den Zeitstempel des Zielverzeichnisses selbst zu setzen
+          # - und das gehört beim Hoster einem anderen Benutzer als dem, mit
+          # dem wir uns anmelden. Das schlägt fehl, setzt den Exit-Code auf 23,
+          # und die folgenden Schritte laufen nicht mehr, obwohl in Wahrheit
+          # jede einzelne Datei sauber übertragen wurde.
+          rsync -rltvz --delete --omit-dir-times --chmod=D755,F644 \
             --exclude '.git/' \
             --exclude '.github/' \
             --exclude '.gitignore' \
