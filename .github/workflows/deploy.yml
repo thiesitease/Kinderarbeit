@@ -133,17 +133,18 @@ jobs:
             printf '%s\n' "$SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
             echo "Serverschlüssel aus dem Secret SSH_KNOWN_HOSTS übernommen."
           else
-            ssh-keyscan -4 -p "$port" "$SSH_HOST" > ~/.ssh/known_hosts 2>/dev/null
-            if [ ! -s ~/.ssh/known_hosts ]; then
-              echo "::error::Der Server antwortet auf Port $port nicht – ssh-keyscan kam leer zurück."
-              echo "Stimmen SSH_HOST und SSH_PORT? Manche Hoster nutzen einen anderen Port als 22."
-              exit 1
-            fi
-            echo "::warning::SSH_KNOWN_HOSTS ist nicht gesetzt – der Serverschlüssel wird beim ersten Kontakt ungeprüft übernommen."
-            echo "Zum Absichern genau diese Zeilen als Secret SSH_KNOWN_HOSTS hinterlegen:"
-            echo "---8<--- SSH_KNOWN_HOSTS ---8<---"
-            cat ~/.ssh/known_hosts
-            echo "--->8--------------------->8---"
+            # Bewusst kein ssh-keyscan mehr: jede Verbindung zählt. Manche
+            # Hoster sperren eine IP nach wenigen Verbindungen in kurzer Zeit,
+            # und dann scheitert ausgerechnet die Verbindung, auf die es
+            # ankommt – mit einem Timeout, der nach einem Netzwerkproblem
+            # aussieht, aber keines ist.
+            echo "::error::Das Secret SSH_KNOWN_HOSTS fehlt."
+            echo "Den Wert auf dem eigenen Rechner holen und als Secret hinterlegen:"
+            echo
+            echo "    ssh-keyscan $SSH_HOST"
+            echo
+            echo "Alle ausgegebenen Zeilen übernehmen (Kommentarzeilen mit # dürfen weg)."
+            exit 1
           fi
           chmod 600 ~/.ssh/known_hosts
 
@@ -172,37 +173,6 @@ jobs:
           } > ~/.ssh/config
           chmod 600 ~/.ssh/config
 
-      - name: Verbindung testen
-        if: steps.secrets.outputs.bereit == 'ja'
-        env:
-          SSH_USER: ${{ secrets.SSH_USER }}
-        run: |
-          # Der Server antwortet messbar träge – ssh-keyscan brauchte im
-          # Protokoll elf Sekunden. Deshalb mehrere Anläufe mit Pause,
-          # statt beim ersten Zeitüberschreiten aufzugeben.
-          for versuch in 1 2 3; do
-            echo "Verbindungsversuch $versuch von 3 …"
-            if ssh "$SSH_USER@ziel" 'echo "Verbindung steht als $(whoami) auf $(hostname)"'; then
-              exit 0
-            fi
-            [ "$versuch" -lt 3 ] && sleep 15
-          done
-
-          echo "::error::Die SSH-Verbindung kam nach drei Versuchen nicht zustande."
-          echo "Die Meldung eine Zeile weiter oben sagt, woran es lag:"
-          echo
-          echo "  \"Network is unreachable\" oder \"Connection timed out\""
-          echo "      → SSH_HOST oder SSH_PORT stimmen nicht, oder der Server"
-          echo "        ist von außen nicht auf diesem Port erreichbar."
-          echo "  \"Permission denied (publickey)\""
-          echo "      → Der öffentliche Schlüssel kinderarbeit_deploy.pub steht"
-          echo "        noch nicht in ~/.ssh/authorized_keys auf dem Server,"
-          echo "        oder SSH_USER stimmt nicht. Siehe docs/DEPLOY.md, Schritt 2."
-          echo "  Fragt nach einem Passwort / \"Host key verification failed\""
-          echo "      → Der private Schlüssel in SSH_KEY hat ein Passwort, bzw."
-          echo "        SSH_KNOWN_HOSTS passt nicht mehr zum Server."
-          exit 1
-
       - name: Zielverzeichnis prüfen
         if: steps.secrets.outputs.bereit == 'ja'
         env:
@@ -213,7 +183,9 @@ jobs:
           # eine Ebene zu hoch – etwa auf das Verzeichnis, in dem alle Websites
           # des Pakets liegen – würde das die anderen Seiten löschen.
           # Deshalb vorher nachsehen, was dort steht.
-          befund=$(ssh "$SSH_USER@ziel" "bash -s -- '$DEPLOY_PATH'" <<'ENTFERNT'
+          # timeout greift auch dann, wenn ssh erst nach dem Verbindungsaufbau
+          # hängen bleibt – ConnectTimeout deckt nur den TCP-Aufbau ab.
+          befund=$(timeout 90 ssh "$SSH_USER@ziel" "bash -s -- '$DEPLOY_PATH'" <<'ENTFERNT'
           ziel="$1"
           [ -d "$ziel" ] || { echo "FEHLT"; exit 0; }
           cd "$ziel" || { echo "FEHLT"; exit 0; }
@@ -224,6 +196,19 @@ jobs:
           if [ "$fremd" -eq 0 ]; then echo "LEER"; else echo "FREMD $fremd"; fi
           ENTFERNT
           )
+
+          if [ -z "$befund" ]; then
+            echo "::error::Die erste SSH-Verbindung kam nicht zustande."
+            echo "Die Meldung darüber sagt, woran es lag:"
+            echo "  \"Connection timed out\" → Der Server nimmt die Verbindung nicht an."
+            echo "      Von einem eigenen Rechner aus geht es? Dann sperrt der Hoster"
+            echo "      vermutlich die Adressbereiche von GitHub, oder er drosselt nach"
+            echo "      mehreren Verbindungen in kurzer Zeit. Einige Minuten warten und"
+            echo "      erneut starten; hilft das dauerhaft nicht, ist FTPS der Weg."
+            echo "  \"Permission denied (publickey)\" → Schlüssel oder SSH_USER stimmen nicht."
+            echo "  \"Host key verification failed\" → SSH_KNOWN_HOSTS passt nicht zum Server."
+            exit 1
+          fi
 
           case "$befund" in
             BEKANNT)
