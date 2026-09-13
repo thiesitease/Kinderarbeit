@@ -132,4 +132,12 @@ php -S localhost:8080
 
 Dann `http://localhost:8080` im Browser öffnen.
 
-Einrichtung auf dem Server: siehe [docs/DEPLOY.md](docs/DEPLOY.md).
+## Veröffentlichen
+
+Ein Push auf den Hauptbranch veröffentlicht automatisch auf
+kinderarbeit.thiesreinhold.de – sobald die vier Secrets hinterlegt sind.
+Der Ablauf prüft erst die Logik, überträgt dann per `rsync` (die Datenbank
+bleibt dabei unangetastet) und schaut zum Schluss von außen nach, ob die
+Seite läuft und `data/` und `app/` abgeschottet sind.
+
+Einrichtung und alle anderen Wege: siehe [docs/DEPLOY.md](docs/DEPLOY.md).
