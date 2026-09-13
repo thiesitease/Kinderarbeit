@@ -34,8 +34,25 @@ und auf ein eigenes Verzeichnis zeigen lassen, zum Beispiel:
 /htdocs/kinderarbeit/
 ```
 
-Danach im selben Schritt **HTTPS aktivieren** (Let's Encrypt). Die mitgelieferte
-`.htaccess` leitet HTTP automatisch auf HTTPS um, sobald ein Zertifikat vorhanden ist.
+Danach im selben Schritt **HTTPS aktivieren** (Let's Encrypt). Das ist kein
+optionaler Schritt: Die mitgelieferte `.htaccess` leitet jeden Aufruf auf HTTPS
+um, und ohne eigenes Zertifikat für die Subdomain zeigt der Browser dann eine
+Sicherheitswarnung statt der Anwendung.
+
+So lässt sich prüfen, ob das Zertifikat schon passt:
+
+```bash
+curl -sI https://kinderarbeit.example.de/ | head -1
+```
+
+Kommt stattdessen „SSL: no alternative certificate subject name matches“, ist
+noch das Standardzertifikat des Hosters aktiv (`*.manitu.net`) – dann im
+Kundenbereich für diese Subdomain ein Zertifikat ausstellen lassen.
+
+Die Prüfdateien, mit denen Let's Encrypt die Domain bestätigt, liegen unter
+`/.well-known/acme-challenge/`. Diesen Pfad nimmt die `.htaccess` bewusst von
+der HTTPS-Weiterleitung aus – sonst könnte das Zertifikat gar nicht erst
+ausgestellt werden.
 
 ---
 
@@ -328,6 +345,7 @@ Die Datei `data/kinderarbeit.sqlite` wird dabei nie überschrieben – sie steht
 | GitHub-Lauf bricht bei „SSH vorbereiten“ ab | Schlüssel unvollständig kopiert – `SSH_KEY` muss die Zeilen `-----BEGIN` und `-----END` enthalten |
 | GitHub-Lauf meldet „Permission denied (publickey)“ | öffentlicher Schlüssel fehlt in `~/.ssh/authorized_keys` auf dem Server, oder `SSH_USER` stimmt nicht |
 | GitHub-Lauf meldet „Host key verification failed“ | `SSH_KNOWN_HOSTS` passt nicht mehr zum Server – Secret löschen, einmal laufen lassen, neuen Wert aus dem Protokoll übernehmen |
+| GitHub-Lauf bricht bei „Verbindung testen“ ab | Der öffentliche Schlüssel fehlt auf dem Server (Schritt 2), oder der private Schlüssel in `SSH_KEY` hat ein Passwort |
 | PowerShell: „ssh-copy-id wurde nicht als Name eines Cmdlet erkannt“ | Das gibt es unter Windows nicht – die beiden PowerShell-Zeilen aus Schritt 2 benutzen |
 | Schlüssel liegt im Projektverzeichnis statt unter `.ssh` | PowerShell löst `~` nicht auf; mit `$HOME` statt `~` neu erzeugen |
 | Ein Zugangslink ist in falsche Hände geraten | unter **Familie** „Neu erzeugen“ – der alte Link ist sofort tot |

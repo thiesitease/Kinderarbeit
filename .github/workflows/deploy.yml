@@ -67,6 +67,9 @@ jobs:
     name: Auf den Server übertragen
     needs: pruefen
     runs-on: ubuntu-latest
+    # Rettungsleine: ein Deploy dauert Sekunden. Wenn nach 10 Minuten nichts
+    # fertig ist, hängt etwas – dann lieber abbrechen als Stunden blockieren.
+    timeout-minutes: 10
     outputs:
       bereit: ${{ steps.secrets.outputs.bereit }}
     steps:
@@ -134,8 +137,29 @@ jobs:
             echo "  IdentityFile ~/.ssh/id_deploy"
             echo "  IdentitiesOnly yes"
             echo "  StrictHostKeyChecking yes"
+            # Ohne diese vier Zeilen fällt ssh auf die Passwortabfrage zurück,
+            # wenn der Schlüssel nicht akzeptiert wird – und wartet dann
+            # endlos auf eine Eingabe, die es in einem Workflow nicht gibt.
+            echo "  BatchMode yes"
+            echo "  PasswordAuthentication no"
+            echo "  KbdInteractiveAuthentication no"
+            echo "  ConnectTimeout 20"
           } > ~/.ssh/config
           chmod 600 ~/.ssh/config
+
+      - name: Verbindung testen
+        if: steps.secrets.outputs.bereit == 'ja'
+        run: |
+          if ssh ziel 'echo "Verbindung steht als $(whoami) auf $(hostname)"'; then
+            exit 0
+          fi
+          echo "::error::Der Server nimmt den Schlüssel nicht an."
+          echo "Häufigste Ursache: der öffentliche Schlüssel kinderarbeit_deploy.pub"
+          echo "steht noch nicht in ~/.ssh/authorized_keys auf dem Server."
+          echo "Siehe docs/DEPLOY.md, Variante B, Schritt 2."
+          echo "Zweithäufigste Ursache: der private Schlüssel in SSH_KEY hat ein"
+          echo "Passwort – das kann ein Workflow nicht eingeben."
+          exit 1
 
       - name: Dateien übertragen
         if: steps.secrets.outputs.bereit == 'ja'
