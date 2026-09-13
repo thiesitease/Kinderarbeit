@@ -205,6 +205,107 @@ check('Jeder Token trifft sein Profil', (int)Users::findByToken($tokenB)['id'], 
 check('Spalte access_token vorhanden',
       in_array('access_token', $pdo->query('PRAGMA table_info(users)')->fetchAll(PDO::FETCH_COLUMN, 1), true), true);
 
+echo "\nBuchungen aendern und loeschen\n";
+$balance  = Ledger::balance($childId);
+$manualId = Ledger::book($childId, 500, 'Taschengeld extra', 'bonus', 'manual', null, (int)$thies['id']);
+check('Buchung angelegt',             Ledger::balance($childId), $balance + 500);
+
+$entry = Ledger::find($manualId);
+check('Buchung wiedergefunden',       $entry['description'], 'Taschengeld extra');
+check('Von Hand erfasst',             Ledger::isManual($entry), true);
+check('Art fuer das Formular',        Ledger::kindOf($entry), 'bonus');
+
+$lastMonth = month_shift(current_month(), -1);
+check('Aendern klappt', Ledger::update($manualId, [
+    'child_id'     => $childId,
+    'amount_cents' => -800,
+    'description'  => 'Doch eine Auszahlung',
+    'category'     => 'payout',
+    'booked_at'    => $lastMonth . '-05 12:00:00',
+], (int)$thies['id']), true);
+
+$entry = Ledger::find($manualId);
+check('Betrag geaendert',             (int)$entry['amount_cents'], -800);
+check('Text geaendert',               $entry['description'], 'Doch eine Auszahlung');
+check('Art geaendert',                $entry['category'], 'payout');
+check('Monat mitgezogen',             $entry['booked_month'], $lastMonth);
+check('Aenderung ist vermerkt',       (int)$entry['updated_by'], (int)$thies['id']);
+check('Guthaben nach dem Aendern',    Ledger::balance($childId), $balance - 800);
+check('Zaehlt im alten Monat',        Ledger::monthSummary($childId, $lastMonth)['payouts'], 800);
+
+check('Loeschen klappt',              Ledger::delete($manualId, (int)$thies['id']), true);
+check('Guthaben wieder wie vorher',   Ledger::balance($childId), $balance);
+check('Geloeschte Buchung ist weg',   Ledger::find($manualId), null);
+check('Zweites Loeschen scheitert',   Ledger::delete($manualId, (int)$thies['id']), false);
+
+echo "\nGutschrift und Meldung bleiben zusammen\n";
+
+/** Die Buchung, die zu einer Meldung gehoert. */
+$ledgerFor = static function (int $completionId, string $category) use ($pdo): int {
+    $stmt = $pdo->prepare(
+        "SELECT id FROM ledger WHERE ref_type = 'completion' AND ref_id = :id AND category = :category"
+    );
+    $stmt->execute(['id' => $completionId, 'category' => $category]);
+    return (int)$stmt->fetchColumn();
+};
+
+$balance = Ledger::balance($childId);
+$meldung = Completions::submit(Tasks::find(4), $childId);
+Completions::approve($meldung, (int)$thies['id']);
+check('Gutschrift gebucht',           Ledger::balance($childId), $balance + 200);
+
+$creditId = $ledgerFor($meldung, 'task');
+check('Gutschrift gefunden',          $creditId > 0, true);
+check('Gutschrift haengt an der Meldung', Ledger::isManual(Ledger::find($creditId)), false);
+
+Ledger::update($creditId, [
+    'child_id'     => $childId,
+    'amount_cents' => 150,
+    'description'  => 'Staubsaugen (kleine Runde)',
+    'category'     => 'task',
+    'booked_at'    => Ledger::find($creditId)['booked_at'],
+], (int)$thies['id']);
+check('Guthaben nach der Korrektur',  Ledger::balance($childId), $balance + 150);
+check('Meldung fuehrt den neuen Betrag', (int)Completions::find($meldung)['amount_cents'], 150);
+
+check('Ruecknahme klappt',            Completions::revoke($meldung, (int)$thies['id']), true);
+check('Gegenbuchung gleicht genau aus', Ledger::balance($childId), $balance);
+
+check('Gegenbuchung loeschen',        Ledger::delete($ledgerFor($meldung, 'correction'), (int)$thies['id']), true);
+check('Bestaetigung gilt wieder',     Completions::find($meldung)['status'], 'approved');
+check('Guthaben mit Gutschrift',      Ledger::balance($childId), $balance + 150);
+
+check('Gutschrift loeschen',          Ledger::delete($creditId, (int)$thies['id']), true);
+check('Meldung gilt als abgelehnt',   Completions::find($meldung)['status'], 'rejected');
+check('Guthaben wie vor der Meldung', Ledger::balance($childId), $balance);
+
+$zurueck = Completions::submit(Tasks::find(2), $childId);
+Completions::approve($zurueck, (int)$thies['id']);
+Completions::revoke($zurueck, (int)$thies['id']);
+check('Nach der Ruecknahme unveraendert', Ledger::balance($childId), $balance);
+check('Gutschrift loeschen',          Ledger::delete($ledgerFor($zurueck, 'task'), (int)$thies['id']), true);
+check('Gegenbuchung faellt mit weg',  $ledgerFor($zurueck, 'correction'), 0);
+check('Konto bleibt ausgeglichen',    Ledger::balance($childId), $balance);
+
+echo "\nGeloeschte Abbuchung kommt nicht wieder\n";
+Expenses::setActive($expenseId, true);
+check('Nichts nachzuholen',           Billing::run(true), 0);
+
+$stmt = $pdo->prepare('SELECT ledger_id FROM expense_bookings WHERE expense_id = :id AND month = :month');
+$stmt->execute(['id' => $expenseId, 'month' => current_month()]);
+$expenseLedgerId = (int)$stmt->fetchColumn();
+check('Abbuchung des Monats gefunden', $expenseLedgerId > 0, true);
+
+$balance = Ledger::balance($childId);
+check('Abbuchung loeschen',           Ledger::delete($expenseLedgerId, (int)$thies['id']), true);
+check('Guthaben steigt wieder',       Ledger::balance($childId), $balance + 1990);
+check('Merker bleibt stehen',         Expenses::isBooked($expenseId, current_month()), true);
+check('Abrechnung bucht nicht neu',   Billing::run(true), 0);
+check('Guthaben bleibt',              Ledger::balance($childId), $balance + 1990);
+
+$stmt->execute(['id' => $expenseId, 'month' => current_month()]);
+check('Merker ohne Buchung',          $stmt->fetchColumn(), null);
+
 // Aufraeumen
 foreach (glob($tmp . '/*') ?: [] as $file) {
     @unlink($file);

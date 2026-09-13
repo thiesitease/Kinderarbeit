@@ -541,6 +541,14 @@ a:hover { color: color-mix(in srgb, var(--accent-ink) 75%, var(--text)); }
 .table-wrap { overflow-x: auto; }
 .table { width: 100%; border-collapse: collapse; font-size: .9rem; }
 .table th, .table td { padding: .6rem .7rem; text-align: left; border-bottom: 1px solid var(--border); white-space: nowrap; }
+
+/* Die Spalte mit Bearbeiten und Löschen bleibt beim seitlichen Scrollen stehen,
+   damit sie auf dem Handy erreichbar ist. */
+.table .col-actions {
+  position: sticky; right: 0; z-index: 1;
+  background: var(--surface);
+  box-shadow: -10px 0 10px -10px rgb(0 0 0 / .35);
+}
 .table th { font-size: .78rem; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); font-weight: 700; }
 .table tbody tr:last-child td { border-bottom: 0; }
 .table .num { text-align: right; font-variant-numeric: tabular-nums; font-weight: 650; }

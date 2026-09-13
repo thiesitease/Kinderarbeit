@@ -134,7 +134,9 @@ final class Database
             booked_at    TEXT    NOT NULL,
             booked_month TEXT    NOT NULL,
             created_by   INTEGER REFERENCES users(id) ON DELETE SET NULL,
-            created_at   TEXT    NOT NULL
+            created_at   TEXT    NOT NULL,
+            updated_by   INTEGER REFERENCES users(id) ON DELETE SET NULL,
+            updated_at   TEXT
         );
 
         CREATE TABLE IF NOT EXISTS expenses (
@@ -151,11 +153,14 @@ final class Database
             created_at   TEXT    NOT NULL
         );
 
+        -- ledger_id darf leer sein: wird eine Abbuchung im Verlauf geloescht,
+        -- bleibt der Merker (expense_id, month) stehen und Billing bucht den
+        -- Monat nicht noch einmal ab.
         CREATE TABLE IF NOT EXISTS expense_bookings (
             id         INTEGER PRIMARY KEY AUTOINCREMENT,
             expense_id INTEGER NOT NULL REFERENCES expenses(id) ON DELETE CASCADE,
             month      TEXT    NOT NULL,
-            ledger_id  INTEGER NOT NULL REFERENCES ledger(id) ON DELETE CASCADE,
+            ledger_id  INTEGER REFERENCES ledger(id) ON DELETE SET NULL,
             created_at TEXT    NOT NULL,
             UNIQUE (expense_id, month)
         );
@@ -177,8 +182,53 @@ final class Database
         self::addColumn($pdo, 'users', 'access_token', 'TEXT');
         self::addColumn($pdo, 'users', 'token_created_at', 'TEXT');
         self::addColumn($pdo, 'users', 'token_used_at', 'TEXT');
+        self::addColumn($pdo, 'ledger', 'updated_by', 'INTEGER');
+        self::addColumn($pdo, 'ledger', 'updated_at', 'TEXT');
 
         $pdo->exec('CREATE UNIQUE INDEX IF NOT EXISTS idx_users_token ON users (access_token) WHERE access_token IS NOT NULL');
+
+        self::relaxExpenseBookings($pdo);
+    }
+
+    /**
+     * Aeltere Datenbanken haben expense_bookings.ledger_id als NOT NULL mit
+     * ON DELETE CASCADE. Wird eine Abbuchung im Verlauf geloescht, faellt damit
+     * auch der Merker fuer den Monat weg – und die naechste Abrechnung legt sie
+     * sofort neu an. Deshalb die Tabelle einmalig umbauen.
+     */
+    private static function relaxExpenseBookings(PDO $pdo): void
+    {
+        $notNull = null;
+        foreach ($pdo->query('PRAGMA table_info(expense_bookings)')->fetchAll() as $column) {
+            if ($column['name'] === 'ledger_id') {
+                $notNull = (int)$column['notnull'] === 1;
+            }
+        }
+        if ($notNull !== true) {
+            return; // Tabelle fehlt oder ist bereits umgestellt.
+        }
+
+        // Fremdschluessel waehrend des Umbaus aus – sonst raeumt SQLite beim
+        // DROP der alten Tabelle die kopierten Zeilen gleich wieder weg.
+        $pdo->exec('PRAGMA foreign_keys = OFF');
+        try {
+            $pdo->exec(<<<SQL
+            CREATE TABLE expense_bookings_neu (
+                id         INTEGER PRIMARY KEY AUTOINCREMENT,
+                expense_id INTEGER NOT NULL REFERENCES expenses(id) ON DELETE CASCADE,
+                month      TEXT    NOT NULL,
+                ledger_id  INTEGER REFERENCES ledger(id) ON DELETE SET NULL,
+                created_at TEXT    NOT NULL,
+                UNIQUE (expense_id, month)
+            );
+            INSERT INTO expense_bookings_neu (id, expense_id, month, ledger_id, created_at)
+                 SELECT id, expense_id, month, ledger_id, created_at FROM expense_bookings;
+            DROP TABLE expense_bookings;
+            ALTER TABLE expense_bookings_neu RENAME TO expense_bookings;
+            SQL);
+        } finally {
+            $pdo->exec('PRAGMA foreign_keys = ON');
+        }
     }
 
     /** Eine Spalte ergaenzen, falls sie noch fehlt. */

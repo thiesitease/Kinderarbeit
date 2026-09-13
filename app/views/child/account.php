@@ -93,6 +93,9 @@ $isCurrentMonth = $month === current_month();
                 <div class="entry__title"><?= e($entry['description']) ?></div>
                 <div class="entry__meta">
                   <?= e(Ledger::label($entry['category'])) ?> · <?= e(format_datetime($entry['booked_at'])) ?>
+                  <?php if (!empty($entry['updated_at'])): ?>
+                    · geändert <?= e(format_datetime($entry['updated_at'])) ?>
+                  <?php endif; ?>
                 </div>
               </div>
               <div class="entry__amount <?= $amount >= 0 ? 'value-positive' : 'value-negative' ?>">

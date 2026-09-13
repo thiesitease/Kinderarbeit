@@ -6,7 +6,7 @@ declare(strict_types=1);
  * Einstiegspunkt fuer alle Seitenaufrufe.
  */
 
-define('KINDERARBEIT', '1.0.0');
+define('KINDERARBEIT', '1.1.0');
 
 require __DIR__ . '/app/bootstrap.php';
 
@@ -91,6 +91,7 @@ try {
         // --- Buchungen und Verlauf ------------------------------------------
         case 'buchung':        LedgerController::form();           break;
         case 'buchung-save':   LedgerController::save();           break;
+        case 'buchung-aktion': LedgerController::action();         break;
         case 'verlauf':        LedgerController::history();        break;
 
         // --- Familie und Einstellungen ---------------------------------------

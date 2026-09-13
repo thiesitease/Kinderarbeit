@@ -9,6 +9,13 @@ defined('KINDERARBEIT') || exit;
 $childId        = (int)$child['id'];
 $isCurrentMonth = $month === current_month();
 $activeExpenses = array_filter($expenses, static fn (array $ex): bool => (int)$ex['is_active'] === 1);
+
+// Damit Bearbeiten und Löschen einer Buchung wieder auf dieser Seite landen.
+$back = ['back' => 'kind-detail', 'back_id' => $childId, 'back_monat' => $month];
+$backFields = '';
+foreach ($back as $key => $value) {
+    $backFields .= '<input type="hidden" name="' . e($key) . '" value="' . e((string)$value) . '">';
+}
 ?>
 
 <section class="hero" style="--accent: <?= e($child['color']) ?>">
@@ -30,8 +37,8 @@ $activeExpenses = array_filter($expenses, static fn (array $ex): bool => (int)$e
         : 'noch nie angemeldet' ?></span>
   </div>
   <div class="btn-row mt-2">
-    <a class="btn btn--sm" href="<?= e(url('buchung', ['kind' => $childId, 'art' => 'payout'])) ?>">💶 Auszahlen</a>
-    <a class="btn btn--sm" href="<?= e(url('buchung', ['kind' => $childId, 'art' => 'bonus'])) ?>">🎁 Bonus</a>
+    <a class="btn btn--sm" href="<?= e(url('buchung', $back + ['kind' => $childId, 'art' => 'payout'])) ?>">💶 Auszahlen</a>
+    <a class="btn btn--sm" href="<?= e(url('buchung', $back + ['kind' => $childId, 'art' => 'bonus'])) ?>">🎁 Bonus</a>
     <a class="btn btn--sm" href="<?= e(url('ausgabe-form', ['kind' => $childId])) ?>">💳 Feste Ausgabe</a>
   </div>
 </section>
@@ -153,11 +160,30 @@ $activeExpenses = array_filter($expenses, static fn (array $ex): bool => (int)$e
                 <div class="entry__meta">
                   <?= e(Ledger::label($entry['category'])) ?> · <?= e(format_datetime($entry['booked_at'])) ?>
                   <?php if (!empty($entry['created_by_name'])): ?> · <?= e($entry['created_by_name']) ?><?php endif; ?>
+                  <?php if (!empty($entry['updated_at'])): ?>
+                    · geändert <?= e(format_datetime($entry['updated_at'])) ?>
+                  <?php endif; ?>
                 </div>
               </div>
               <div class="entry__amount <?= $amount >= 0 ? 'value-positive' : 'value-negative' ?>">
                 <?= e(Money::format($amount, true)) ?>
               </div>
+              <a class="btn btn--ghost btn--sm" href="<?= e(url('buchung', $back + ['id' => (int)$entry['id']])) ?>"
+                 title="Buchung bearbeiten">
+                <span aria-hidden="true">✏️</span>
+                <span class="visually-hidden">Buchung „<?= e($entry['description']) ?>“ bearbeiten</span>
+              </a>
+              <form method="post" action="<?= e(url('buchung-aktion')) ?>" class="inline-form"
+                    data-confirm="<?= e(Ledger::deleteQuestion($entry)) ?>">
+                <?= Csrf::field() ?>
+                <?= $backFields ?>
+                <input type="hidden" name="id" value="<?= (int)$entry['id'] ?>">
+                <button class="btn btn--ghost btn--sm" type="submit" name="action" value="delete"
+                        title="Buchung löschen">
+                  <span aria-hidden="true">🗑</span>
+                  <span class="visually-hidden">Buchung „<?= e($entry['description']) ?>“ löschen</span>
+                </button>
+              </form>
             </div>
           </li>
         <?php endforeach; ?>

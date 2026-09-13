@@ -20,7 +20,7 @@ vollständige Historie und der Restbetrag pro Monat.
 | Aufgaben | Eltern | Aufgaben anlegen, Betrag festlegen, zuweisen, pausieren |
 | Kinder | Eltern | Konten im Vergleich, Detailseite je Kind |
 | Ausgaben | Eltern | regelmäßige monatliche Ausgaben je Kind |
-| Verlauf | Eltern | alle Buchungen, filterbar nach Kind und Monat |
+| Verlauf | Eltern | alle Buchungen, filterbar nach Kind und Monat – hier lassen sie sich auch ändern und löschen |
 | Familie | Eltern | Zugangslinks, PINs, Sperren, Symbole und Farben |
 
 ## Die Familie
@@ -68,7 +68,8 @@ Deshalb lohnt es sich, unter **Familie** trotzdem einmal eine eigene PIN zu setz
 
 Jedes Kind hat ein Buchungsjournal. Positive Beträge sind Gutschriften,
 negative Abbuchungen; der Kontostand ist immer die Summe aller Buchungen.
-Nichts wird überschrieben, deshalb bleibt jede Änderung nachvollziehbar.
+Buchungen entstehen von selbst – aus bestätigten Aufgaben und festen Ausgaben –
+oder von Hand; korrigieren lassen sie sich jederzeit (siehe unten).
 
 Beträge werden als ganzzahlige **Cent** gespeichert – so entstehen keine
 Rundungsfehler.
@@ -81,6 +82,28 @@ verdient + Bonus + Korrekturen − feste Ausgaben − Auszahlungen = Rest im Mon
 
 Das **Guthaben** ist der tatsächliche Kontostand über alle Monate hinweg,
 der **Rest im Monat** die Bilanz des gewählten Monats.
+
+## Buchungen ändern und löschen
+
+Vertippt oder das falsche Kind erwischt? Im **Verlauf** und auf der Detailseite
+eines Kindes hat jede Buchung zwei Knöpfe: ✏️ zum Bearbeiten und 🗑 zum Löschen.
+Beides können nur die Eltern; vor dem Löschen wird nachgefragt, und die
+Bestätigung nennt gleich den neuen Kontostand.
+
+Ändern lassen sich Betrag, Datum und Verwendungszweck – bei einer von Hand
+erfassten Buchung außerdem das Kind und die Art (Auszahlung, Bonus, Abzug,
+Korrektur). Das Datum bestimmt, in welchem Monat die Buchung zählt. Wer etwas
+ändert, hinterlässt eine Spur: geänderte Buchungen sind mit Name und Zeitpunkt
+als „geändert“ gekennzeichnet, auch für das Kind.
+
+Buchungen, die zu etwas anderem gehören, nehmen es beim Löschen mit:
+
+| Buchung | Was beim Löschen passiert |
+|---|---|
+| Gutschrift für eine Aufgabe | Die Meldung gilt danach als abgelehnt. Eine Gegenbuchung aus einer Rücknahme fällt mit weg, damit das Konto stimmt. |
+| Rücknahme einer Aufgabe | Die Bestätigung gilt wieder, der Betrag ist erneut gutgeschrieben. |
+| Feste Ausgabe | Dieser Monat wird **nicht** noch einmal abgebucht. Die Ausgabe selbst bleibt bestehen und läuft ab dem nächsten Monat weiter. |
+| Auszahlung, Bonus, Abzug, Korrektur | Es verschwindet genau diese eine Buchung. |
 
 ## Regelmäßige Ausgaben
 

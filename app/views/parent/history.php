@@ -4,13 +4,23 @@ defined('KINDERARBEIT') || exit;
 
 $income  = array_sum(array_map(static fn (array $e): int => max(0, (int)$e['amount_cents']), $entries));
 $outflow = array_sum(array_map(static fn (array $e): int => min(0, (int)$e['amount_cents']), $entries));
+
+// Filter mitgeben, damit Bearbeiten und Löschen wieder hierher zurückführen.
+$back = ['back' => 'verlauf', 'back_monat' => $month];
+if ($childId > 0) {
+    $back['back_kind'] = $childId;
+}
+$backFields = '';
+foreach ($back as $key => $value) {
+    $backFields .= '<input type="hidden" name="' . e($key) . '" value="' . e((string)$value) . '">';
+}
 ?>
 
 <div class="section__head">
   <h1>Verlauf</h1>
   <span class="section__hint"><?= count($entries) ?> Buchungen</span>
   <div class="section__action">
-    <a class="btn btn--sm" href="<?= e(url('buchung')) ?>">＋ Buchung</a>
+    <a class="btn btn--sm" href="<?= e(url('buchung', $back)) ?>">＋ Buchung</a>
   </div>
 </div>
 
@@ -62,6 +72,7 @@ $outflow = array_sum(array_map(static fn (array $e): int => min(0, (int)$e['amou
             <th>Art</th>
             <th>Erfasst von</th>
             <th class="num">Betrag</th>
+            <th class="num col-actions"><span class="visually-hidden">Ändern</span></th>
           </tr>
         </thead>
         <tbody>
@@ -77,8 +88,33 @@ $outflow = array_sum(array_map(static fn (array $e): int => min(0, (int)$e['amou
               </td>
               <td><?= e($entry['description']) ?></td>
               <td class="muted small"><?= e(Ledger::emoji($entry['category'])) ?> <?= e(Ledger::label($entry['category'])) ?></td>
-              <td class="muted small"><?= e($entry['created_by_name'] ?? '–') ?></td>
+              <td class="muted small">
+                <?= e($entry['created_by_name'] ?? '–') ?>
+                <?php if (!empty($entry['updated_at'])): ?>
+                  · <span title="geändert von <?= e($entry['updated_by_name'] ?? '–') ?>, <?= e(format_datetime($entry['updated_at'])) ?>">geändert</span>
+                <?php endif; ?>
+              </td>
               <td class="num <?= $amount >= 0 ? 'value-positive' : 'value-negative' ?>"><?= e(Money::format($amount, true)) ?></td>
+              <td class="num col-actions">
+                <span class="row row--tight row--nowrap" style="justify-content:flex-end">
+                  <a class="btn btn--ghost btn--sm" href="<?= e(url('buchung', $back + ['id' => (int)$entry['id']])) ?>"
+                     title="Buchung bearbeiten">
+                    <span aria-hidden="true">✏️</span>
+                    <span class="visually-hidden">Buchung „<?= e($entry['description']) ?>“ bearbeiten</span>
+                  </a>
+                  <form method="post" action="<?= e(url('buchung-aktion')) ?>" class="inline-form"
+                        data-confirm="<?= e(Ledger::deleteQuestion($entry)) ?>">
+                    <?= Csrf::field() ?>
+                    <?= $backFields ?>
+                    <input type="hidden" name="id" value="<?= (int)$entry['id'] ?>">
+                    <button class="btn btn--ghost btn--sm" type="submit" name="action" value="delete"
+                            title="Buchung löschen">
+                      <span aria-hidden="true">🗑</span>
+                      <span class="visually-hidden">Buchung „<?= e($entry['description']) ?>“ löschen</span>
+                    </button>
+                  </form>
+                </span>
+              </td>
             </tr>
           <?php endforeach; ?>
         </tbody>
