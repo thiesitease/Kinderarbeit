@@ -34,8 +34,25 @@ und auf ein eigenes Verzeichnis zeigen lassen, zum Beispiel:
 /htdocs/kinderarbeit/
 ```
 
-Danach im selben Schritt **HTTPS aktivieren** (Let's Encrypt). Die mitgelieferte
-`.htaccess` leitet HTTP automatisch auf HTTPS um, sobald ein Zertifikat vorhanden ist.
+Danach im selben Schritt **HTTPS aktivieren** (Let's Encrypt). Das ist kein
+optionaler Schritt: Die mitgelieferte `.htaccess` leitet jeden Aufruf auf HTTPS
+um, und ohne eigenes Zertifikat für die Subdomain zeigt der Browser dann eine
+Sicherheitswarnung statt der Anwendung.
+
+So lässt sich prüfen, ob das Zertifikat schon passt:
+
+```bash
+curl -sI https://kinderarbeit.thiesreinhold.de/ | head -1
+```
+
+Kommt stattdessen „SSL: no alternative certificate subject name matches“, ist
+noch das Standardzertifikat des Hosters aktiv (`*.manitu.net`) – dann im
+Kundenbereich für diese Subdomain ein Zertifikat ausstellen lassen.
+
+Die Prüfdateien, mit denen Let's Encrypt die Domain bestätigt, liegen unter
+`/.well-known/acme-challenge/`. Diesen Pfad nimmt die `.htaccess` bewusst von
+der HTTPS-Weiterleitung aus – sonst könnte das Zertifikat gar nicht erst
+ausgestellt werden.
 
 ---
 
@@ -104,6 +121,22 @@ kommt auf den Server).
 
 **2. Öffentlichen Schlüssel auf dem Server erlauben**
 
+> **Bei manitu geht das über den Kundenbereich, nicht über die Kommandozeile.**
+> Der Server dort erlaubt ausschließlich die Anmeldung per Schlüssel, kein
+> Passwort – erkennbar an der Meldung `Permission denied (publickey).` Damit
+> lässt sich der Schlüssel nicht per SSH hinterlegen, denn genau dafür bräuchte
+> man ja schon einen funktionierenden Zugang.
+>
+> Stattdessen im manitu-Kundenbereich den Bereich für SSH-Schlüssel öffnen und
+> dort den Inhalt von `kinderarbeit_deploy.pub` einfügen – eine einzige Zeile,
+> die mit `ssh-ed25519 AAAA…` beginnt und mit dem Kommentar endet.
+>
+> Der Benutzername hat bei manitu die Form `webspace\benutzer`, also zum
+> Beispiel `pete\thies`. Genau so gehört er in das Secret `SSH_USER` – mit
+> Backslash, ohne Anführungszeichen.
+
+Auf Servern, die auch Passwörter zulassen, geht es direkt von der Kommandozeile:
+
 *macOS und Linux:*
 
 ```bash
@@ -143,14 +176,14 @@ New repository secret**. Vier Stück sind nötig:
 | `SSH_HOST` | Servername aus dem manitu-Kundenbereich, z. B. `ssh.manitu.de` |
 | `SSH_USER` | Benutzername beim Hoster |
 | `SSH_KEY` | der **gesamte** Inhalt von `~/.ssh/kinderarbeit_deploy` – mit den Zeilen `-----BEGIN …` und `-----END …` |
-| `DEPLOY_PATH` | Zielverzeichnis der Subdomain, z. B. `/htdocs/kinderarbeit` |
+| `DEPLOY_PATH` | Verzeichnis **genau dieser Subdomain**, bei manitu z. B. `/home/sites/site100029489/web/kinderarbeit.thiesreinhold.de` |
 
 Zwei weitere sind freiwillig:
 
 | Name | Wofür |
 |---|---|
 | `SSH_PORT` | nur falls der Server nicht auf Port 22 hört |
-| `SSH_KNOWN_HOSTS` | Serverschlüssel – siehe Schritt 5 |
+| `SSH_KNOWN_HOSTS` | Serverschlüssel – **erforderlich**, siehe Schritt 5 |
 
 Den privaten Schlüssel bekommst du so in die Zwischenablage:
 
@@ -162,6 +195,19 @@ xclip -sel clip < ~/.ssh/kinderarbeit_deploy    # Linux
 ```powershell
 Get-Content "$HOME\.ssh\kinderarbeit_deploy" -Raw | Set-Clipboard   # Windows
 ```
+
+> **Wichtig: `DEPLOY_PATH` muss auf das Verzeichnis der Subdomain zeigen**,
+> nicht auf das darüberliegende `web/`, in dem alle Websites des Pakets
+> nebeneinander liegen. Dort würde das Übertragen mit `--delete` die anderen
+> Seiten löschen. Der Workflow prüft das Zielverzeichnis deshalb vorher und
+> bricht ab, wenn er dort fremde Dateien findet – aber verlass dich nicht
+> allein darauf.
+>
+> So findest du den richtigen Pfad auf dem Server:
+>
+> ```bash
+> grep -rl "kinderarbeit.thiesreinhold.de" ~/../.. --include="index.html" 2>/dev/null
+> ```
 
 **4. Veröffentlichen**
 
@@ -179,23 +225,32 @@ Von Hand starten geht unter **Actions → Veröffentlichen → Run workflow**.
 Solange die Secrets fehlen, wird nur geprüft und der Deploy übersprungen –
 der Lauf bleibt grün und sagt im Protokoll, was noch fehlt.
 
-**5. Absichern: Serverschlüssel festnageln**
+**5. Serverschlüssel hinterlegen (erforderlich)**
 
-Ohne `SSH_KNOWN_HOSTS` übernimmt der erste Lauf den Serverschlüssel ungeprüft.
-Er schreibt ihn dafür ins Protokoll, zwischen zwei Markierungen:
-
-```
----8<--- SSH_KNOWN_HOSTS ---8<---
-ssh.manitu.de ssh-ed25519 AAAAC3Nza…
---->8--------------------->8---
-```
-
-Diese Zeilen als Secret `SSH_KNOWN_HOSTS` hinterlegen. Ab dann prüft jeder
-Lauf, dass er wirklich mit deinem Server spricht. Alternativ lokal holen:
+Auf dem eigenen Rechner:
 
 ```bash
-ssh-keyscan SERVER
+ssh-keyscan ngcobalt19.manitu.net
 ```
+
+```powershell
+ssh-keyscan ngcobalt19.manitu.net
+```
+
+Alle ausgegebenen Zeilen als Secret `SSH_KNOWN_HOSTS` hinterlegen
+(Kommentarzeilen mit `#` dürfen weg).
+
+Das hat zwei Gründe. Der offensichtliche: jeder Lauf prüft damit, dass er
+wirklich mit deinem Server spricht, statt den Schlüssel beim ersten Kontakt
+blind zu übernehmen.
+
+Der wichtigere ist praktischer Natur. Ohne das Secret müsste der Lauf den
+Schlüssel selbst holen – eine zusätzliche Verbindung. Manche Hoster sperren
+eine Adresse aber nach wenigen Verbindungen in kurzer Zeit, und dann scheitert
+ausgerechnet die Verbindung, auf die es ankommt. Das sieht dann nach einem
+Netzwerkproblem aus, ist aber keines: der Hoster hat schlicht dichtgemacht.
+Der Workflow macht deshalb nur noch drei Verbindungen pro Lauf statt bis zu
+neun – und bricht ohne dieses Secret gleich mit einer Erklärung ab.
 
 ### Variante C – per FTP
 
@@ -270,14 +325,19 @@ ob sie tatsächlich hochgeladen wurde und ob `AllowOverride` aktiv ist.
 
 ---
 
-## 7. Optional: Cronjob für feste Ausgaben
+## 7. Optional: täglicher Aufruf für feste Ausgaben
 
-Die Anwendung bucht fällige Ausgaben beim ersten Seitenaufruf des Tages selbst ab.
-Wer auf Nummer sicher gehen will, richtet zusätzlich einen täglichen Cronjob ein:
+**Wird nicht gebraucht.** Die Anwendung bucht fällige Ausgaben beim ersten
+Seitenaufruf des Tages von selbst ab – genau deshalb ist sie so gebaut.
 
-```
-0 6 * * * /usr/bin/php /htdocs/kinderarbeit/bin/cron.php >/dev/null 2>&1
-```
+Wer trotzdem eine zusätzliche Absicherung will: **kein `crontab` anlegen.**
+Die AGB von manitu untersagen eigene Cronjobs ausdrücklich; dafür gibt es im
+Kundenbereich das Feature **Cronjob**. Dort eintragen:
+
+| Feld | Wert |
+|---|---|
+| Befehl | `/usr/bin/php /home/sites/site100029489/web/kinderarbeit.thiesreinhold.de/bin/cron.php` |
+| Zeitpunkt | täglich, z. B. 6 Uhr |
 
 ---
 
@@ -293,11 +353,15 @@ sqlite3 data/kinderarbeit.sqlite ".backup 'sicherung-$(date +%F).sqlite'"
 scp BENUTZER@SERVER:/htdocs/kinderarbeit/data/kinderarbeit.sqlite ./
 ```
 
-Eine tägliche Sicherung per Cron:
+Für eine tägliche Sicherung ebenfalls das Feature **Cronjob** im Kundenbereich
+nutzen, nicht `crontab`:
 
 ```
-30 3 * * * sqlite3 /htdocs/kinderarbeit/data/kinderarbeit.sqlite ".backup '/htdocs/backups/kinderarbeit-$(date +\%F).sqlite'"
+/usr/bin/sqlite3 /home/sites/site100029489/web/kinderarbeit.thiesreinhold.de/data/kinderarbeit.sqlite ".backup '/home/sites/site100029489/sicherungen/kinderarbeit.sqlite'"
 ```
+
+Das Zielverzeichnis vorher anlegen, und zwar **außerhalb** von `web/` – sonst
+wäre die Sicherung über den Browser abrufbar.
 
 ---
 
@@ -315,6 +379,24 @@ Die Datei `data/kinderarbeit.sqlite` wird dabei nie überschrieben – sie steht
 
 ---
 
+## Was auf dem Server läuft – und was nicht
+
+manitu erlaubt SSH nur unter Auflagen. Was diese Anwendung und ihr
+Veröffentlichen dort tun, bleibt in diesem Rahmen:
+
+| Auflage | Wie das hier aussieht |
+|---|---|
+| Keine dauerhaften Prozesse oder Hintergrundprozesse | Über SSH laufen nur kurze Aufrufe: ein `ls`, die Übertragung durch `rsync`, ein einmaliger Selbsttest. Jeder davon endet innerhalb von Sekunden. Die Anwendung selbst ist ganz normales PHP und läuft nur, solange eine Seite aufgerufen wird |
+| Nichts darf auf einem Port lauschen | Kein einziger Prozess öffnet einen Port. Die Datenbank ist eine Datei, kein Serverdienst – deshalb SQLite und nicht MySQL |
+| Keine eigenen Cronjobs | Es wird keiner gebraucht; fällige Abbuchungen erledigt der erste Seitenaufruf des Tages. Wer trotzdem einen will, nimmt das Feature Cronjob im Kundenbereich |
+| Keine Container | Keine im Spiel. Kein Docker, kein Composer, kein Node – nur PHP-Dateien |
+| Keine erweiterten Rechte | Nirgends `sudo` oder `su`. Geschrieben wird ausschließlich im eigenen Web-Verzeichnis |
+
+**Finger weg von der SSH-Erweiterung in Visual Studio Code** für diesen Server.
+Sie installiert dort unaufgefordert eine dauerhaft laufende Server-Komponente –
+das verstößt gegen die AGB und zieht laut manitu kostenpflichtigen Support nach
+sich. Zum Bearbeiten der Dateien lokal arbeiten und per Git veröffentlichen.
+
 ## Wenn etwas nicht funktioniert
 
 | Symptom | Ursache und Abhilfe |
@@ -328,6 +410,10 @@ Die Datei `data/kinderarbeit.sqlite` wird dabei nie überschrieben – sie steht
 | GitHub-Lauf bricht bei „SSH vorbereiten“ ab | Schlüssel unvollständig kopiert – `SSH_KEY` muss die Zeilen `-----BEGIN` und `-----END` enthalten |
 | GitHub-Lauf meldet „Permission denied (publickey)“ | öffentlicher Schlüssel fehlt in `~/.ssh/authorized_keys` auf dem Server, oder `SSH_USER` stimmt nicht |
 | GitHub-Lauf meldet „Host key verification failed“ | `SSH_KNOWN_HOSTS` passt nicht mehr zum Server – Secret löschen, einmal laufen lassen, neuen Wert aus dem Protokoll übernehmen |
+| GitHub-Lauf: „Network is unreachable“ | `SSH_HOST` enthält etwas anderes als den reinen Hostnamen (kein `https://`, kein Pfad, kein Port), oder der Server ist nur über IPv6 erreichbar – GitHub-Runner können kein IPv6 |
+| GitHub-Lauf: „ssh-keyscan kam leer zurück“ | Falscher Port – manche Hoster nutzen nicht 22. Richtigen Wert als `SSH_PORT` hinterlegen |
+| GitHub-Lauf oder lokal: „Permission denied (publickey)“ | Gute Nachricht – Host, Port und Netzwerk stimmen, nur der Schlüssel wird nicht akzeptiert. Er fehlt auf dem Server (Schritt 2) oder `SSH_USER` ist unvollständig (bei manitu mit Backslash: `webspace\benutzer`) |
+| GitHub-Lauf bricht bei „Verbindung testen“ ab | Die Zeile direkt über der Fehlermeldung nennt die Ursache – der Lauf listet die drei häufigsten Fälle gleich mit auf |
 | PowerShell: „ssh-copy-id wurde nicht als Name eines Cmdlet erkannt“ | Das gibt es unter Windows nicht – die beiden PowerShell-Zeilen aus Schritt 2 benutzen |
 | Schlüssel liegt im Projektverzeichnis statt unter `.ssh` | PowerShell löst `~` nicht auf; mit `$HOME` statt `~` neu erzeugen |
 | Ein Zugangslink ist in falsche Hände geraten | unter **Familie** „Neu erzeugen“ – der alte Link ist sofort tot |

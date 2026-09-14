@@ -1,0 +1,4 @@
+# Kinderarbeit ist eine private Familienanwendung.
+# Sie gehört in keinen Suchindex.
+User-agent: *
+Disallow: /
