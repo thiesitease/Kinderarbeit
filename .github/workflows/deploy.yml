@@ -67,6 +67,9 @@ jobs:
     name: Auf den Server übertragen
     needs: pruefen
     runs-on: ubuntu-latest
+    # Rettungsleine: ein Deploy dauert Sekunden. Wenn nach 10 Minuten nichts
+    # fertig ist, hängt etwas – dann lieber abbrechen als Stunden blockieren.
+    timeout-minutes: 10
     outputs:
       bereit: ${{ steps.secrets.outputs.bereit }}
     steps:
@@ -113,40 +116,155 @@ jobs:
 
           port="${SSH_PORT:-22}"
 
+          # GitHub-Runner haben kein IPv6. Hat der Server nur eine
+          # IPv6-Adresse, endet der Versuch in "Network is unreachable".
+          if getent ahostsv4 "$SSH_HOST" > /dev/null 2>&1; then
+            echo "SSH_HOST hat eine IPv4-Adresse."
+          else
+            echo "::error::Für SSH_HOST gibt es keine IPv4-Adresse."
+            echo "Entweder stimmt die Schreibweise nicht – es gehört nur der"
+            echo "Hostname hinein, ohne https://, ohne Pfad und ohne Port –"
+            echo "oder der Server ist nur über IPv6 erreichbar. GitHub-Runner"
+            echo "können IPv6 nicht nutzen; dann hilft nur eine andere Adresse."
+            exit 1
+          fi
+
           if [ -n "$SSH_KNOWN_HOSTS" ]; then
             printf '%s\n' "$SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
             echo "Serverschlüssel aus dem Secret SSH_KNOWN_HOSTS übernommen."
           else
-            ssh-keyscan -p "$port" "$SSH_HOST" > ~/.ssh/known_hosts 2>/dev/null
-            echo "::warning::SSH_KNOWN_HOSTS ist nicht gesetzt – der Serverschlüssel wird beim ersten Kontakt ungeprüft übernommen."
-            echo "Zum Absichern genau diese Zeilen als Secret SSH_KNOWN_HOSTS hinterlegen:"
-            echo "---8<--- SSH_KNOWN_HOSTS ---8<---"
-            cat ~/.ssh/known_hosts
-            echo "--->8--------------------->8---"
+            # Bewusst kein ssh-keyscan mehr: jede Verbindung zählt. Manche
+            # Hoster sperren eine IP nach wenigen Verbindungen in kurzer Zeit,
+            # und dann scheitert ausgerechnet die Verbindung, auf die es
+            # ankommt – mit einem Timeout, der nach einem Netzwerkproblem
+            # aussieht, aber keines ist.
+            echo "::error::Das Secret SSH_KNOWN_HOSTS fehlt."
+            echo "Den Wert auf dem eigenen Rechner holen und als Secret hinterlegen:"
+            echo
+            echo "    ssh-keyscan $SSH_HOST"
+            echo
+            echo "Alle ausgegebenen Zeilen übernehmen (Kommentarzeilen mit # dürfen weg)."
+            exit 1
           fi
           chmod 600 ~/.ssh/known_hosts
 
+          # Achtung: hier bewusst KEIN "User". Bei manitu enthält der
+          # Benutzername einen Backslash (webspace\benutzer), und den wertet
+          # der Konfigurationsleser von OpenSSH je nach Version als
+          # Escape-Zeichen aus. Deshalb steht er unten in jedem Aufruf als
+          # "$SSH_USER@ziel" davor – dort ist er unkritisch.
           {
             echo "Host ziel"
             echo "  HostName $SSH_HOST"
-            echo "  User $SSH_USER"
             echo "  Port $port"
             echo "  IdentityFile ~/.ssh/id_deploy"
             echo "  IdentitiesOnly yes"
             echo "  StrictHostKeyChecking yes"
+            # Ohne diese vier Zeilen fällt ssh auf die Passwortabfrage zurück,
+            # wenn der Schlüssel nicht akzeptiert wird – und wartet dann
+            # endlos auf eine Eingabe, die es in einem Workflow nicht gibt.
+            echo "  AddressFamily inet"
+            echo "  BatchMode yes"
+            echo "  PasswordAuthentication no"
+            echo "  KbdInteractiveAuthentication no"
+            echo "  ConnectTimeout 60"
+            echo "  ServerAliveInterval 15"
+            echo "  ServerAliveCountMax 8"
           } > ~/.ssh/config
           chmod 600 ~/.ssh/config
+
+      - name: Zielverzeichnis prüfen
+        if: steps.secrets.outputs.bereit == 'ja'
+        env:
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+          SSH_USER: ${{ secrets.SSH_USER }}
+        run: |
+          # Gleich wird mit --delete übertragen. Zeigt DEPLOY_PATH versehentlich
+          # eine Ebene zu hoch – etwa auf das Verzeichnis, in dem alle Websites
+          # des Pakets liegen – würde das die anderen Seiten löschen.
+          # Deshalb vorher nachsehen, was dort steht.
+          # timeout greift auch dann, wenn ssh erst nach dem Verbindungsaufbau
+          # hängen bleibt – ConnectTimeout deckt nur den TCP-Aufbau ab.
+          befund=$(timeout 90 ssh "$SSH_USER@ziel" "bash -s -- '$DEPLOY_PATH'" <<'ENTFERNT'
+          ziel="$1"
+          [ -d "$ziel" ] || { echo "FEHLT"; exit 0; }
+          cd "$ziel" || { echo "FEHLT"; exit 0; }
+          # Unsere eigene Installation erkennen wir an diesen beiden.
+          if [ -f index.php ] && [ -d app ]; then echo "BEKANNT"; exit 0; fi
+          # Sonst dürfen dort nur die Dateien liegen, die ein Hoster beim
+          # Anlegen einer Subdomain selbst hinterlässt. Alles andere könnte
+          # eine fremde Website sein - und die soll --delete nicht treffen.
+          fremd=$(ls -A \
+            | grep -vx 'index.html' \
+            | grep -vx 'index.htm' \
+            | grep -vx 'robots.txt' \
+            | grep -vx 'sitemap.xml' \
+            | grep -vx 'favicon.ico' \
+            | grep -vx '.well-known')
+          if [ -z "$fremd" ]; then
+            echo "LEER"
+          else
+            echo "FREMD"
+            ls -la
+          fi
+          ENTFERNT
+          )
+
+          if [ -z "$befund" ]; then
+            echo "::error::Die erste SSH-Verbindung kam nicht zustande."
+            echo "Die Meldung darüber sagt, woran es lag:"
+            echo "  \"Connection timed out\" → Der Server nimmt die Verbindung nicht an."
+            echo "      Von einem eigenen Rechner aus geht es? Dann sperrt der Hoster"
+            echo "      vermutlich die Adressbereiche von GitHub, oder er drosselt nach"
+            echo "      mehreren Verbindungen in kurzer Zeit. Einige Minuten warten und"
+            echo "      erneut starten; hilft das dauerhaft nicht, ist FTPS der Weg."
+            echo "  \"Permission denied (publickey)\" → Schlüssel oder SSH_USER stimmen nicht."
+            echo "  \"Host key verification failed\" → SSH_KNOWN_HOSTS passt nicht zum Server."
+            exit 1
+          fi
+
+          urteil=$(printf '%s\n' "$befund" | head -1)
+
+          case "$urteil" in
+            BEKANNT)
+              echo "Zielverzeichnis enthält bereits diese Anwendung – wird aktualisiert." ;;
+            LEER)
+              echo "Zielverzeichnis ist leer oder enthält nur die Platzhalterseite – erste Veröffentlichung." ;;
+            FEHLT)
+              echo "::error::Das Verzeichnis aus DEPLOY_PATH gibt es auf dem Server nicht."
+              exit 1 ;;
+            *)
+              echo "::error::Im Zielverzeichnis liegen Dateien, die nicht von dieser Anwendung stammen."
+              echo "Das Übertragen mit --delete würde sie löschen, deshalb wird hier abgebrochen."
+              echo
+              echo "Das steht dort:"
+              printf '%s\n' "$befund" | tail -n +2 | sed 's/^/  /'
+              echo
+              echo "Zeigt DEPLOY_PATH vielleicht eine Ebene zu hoch, also auf das Verzeichnis,"
+              echo "in dem alle Websites des Pakets liegen? Es muss auf das Verzeichnis genau"
+              echo "dieser Subdomain zeigen."
+              echo "Gehören die Dateien dorthin und dürfen weg, einmal von Hand löschen –"
+              echo "danach läuft der Deploy durch."
+              exit 1 ;;
+          esac
 
       - name: Dateien übertragen
         if: steps.secrets.outputs.bereit == 'ja'
         env:
           DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+          SSH_USER: ${{ secrets.SSH_USER }}
         run: |
           # --delete räumt auf dem Server auf, was im Repository nicht mehr steht.
           # Die data-Ausnahmen schützen dabei die Datenbank: was ausgeschlossen
           # ist, löscht rsync nicht.
           # -t überträgt Zeitstempel, sonst lädt jeder Lauf alle Dateien neu hoch.
-          rsync -rltvz --delete --chmod=D755,F644 \
+          # --omit-dir-times lässt dabei die Verzeichnisse aus. Sonst versucht
+          # rsync, auch den Zeitstempel des Zielverzeichnisses selbst zu setzen
+          # - und das gehört beim Hoster einem anderen Benutzer als dem, mit
+          # dem wir uns anmelden. Das schlägt fehl, setzt den Exit-Code auf 23,
+          # und die folgenden Schritte laufen nicht mehr, obwohl in Wahrheit
+          # jede einzelne Datei sauber übertragen wurde.
+          rsync -rltvz --delete --omit-dir-times --chmod=D755,F644 \
             --exclude '.git/' \
             --exclude '.github/' \
             --exclude '.gitignore' \
@@ -154,14 +272,15 @@ jobs:
             --exclude 'data/*.sqlite-wal' \
             --exclude 'data/*.sqlite-shm' \
             --exclude 'data/*.log' \
-            ./ "ziel:$DEPLOY_PATH/"
+            ./ "$SSH_USER@ziel:$DEPLOY_PATH/"
 
       - name: Auf dem Server einrichten und prüfen
         if: steps.secrets.outputs.bereit == 'ja'
         env:
           DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+          SSH_USER: ${{ secrets.SSH_USER }}
         run: |
-          ssh ziel "cd '$DEPLOY_PATH' && mkdir -p data && chmod 775 data && php -v && php bin/selftest.php"
+          ssh "$SSH_USER@ziel" "cd '$DEPLOY_PATH' && mkdir -p data && chmod 775 data && php -v && php bin/selftest.php"
 
   nachschauen:
     name: Seite von außen prüfen

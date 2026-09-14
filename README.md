@@ -90,7 +90,9 @@ Cronjob zur Verfügung steht, prüft die Anwendung das beim ersten
 Seitenaufruf des Tages und holt auch zurückliegende Monate nach.
 Ein eindeutiger Schlüssel über Ausgabe und Monat schließt Doppelbuchungen aus.
 
-Wer einen Cronjob hat, kann zusätzlich täglich `bin/cron.php` aufrufen.
+Ein Cronjob wird dafür **nicht gebraucht**. Wer trotzdem einen will, nutzt das
+Cronjob-Feature des Hosters – eigene `crontab`-Einträge sind bei manitu
+untersagt (siehe [docs/DEPLOY.md](docs/DEPLOY.md)).
 
 ## Technik
 
@@ -118,7 +120,7 @@ docs/DEPLOY.md         Anleitung für die Einrichtung auf dem Server
 ```bash
 php bin/selftest.php        # prüft die Rechenlogik (ohne Webserver)
 php bin/demo-data.php       # legt einen Beispielbestand zum Ausprobieren an
-php bin/cron.php            # bucht fällige feste Ausgaben (optional per Cron)
+php bin/cron.php            # bucht fällige feste Ausgaben (optional, siehe oben)
 php bin/reset-pin.php Emilius 4711   # PIN zurücksetzen, wenn niemand mehr reinkommt
 php bin/zugangslink.php             # alle Zugangslinks anzeigen
 php bin/zugangslink.php Emilius     # neuen Zugangslink erzeugen
