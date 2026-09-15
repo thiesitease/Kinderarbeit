@@ -21,7 +21,7 @@ vollständige Historie und der Restbetrag pro Monat.
 | Kinder | Eltern | Konten im Vergleich, Detailseite je Kind |
 | Ausgaben | Eltern | regelmäßige monatliche Ausgaben je Kind |
 | Verlauf | Eltern | alle Buchungen, filterbar nach Kind und Monat |
-| Familie | Eltern | Zugangslinks, PINs, Sperren, Symbole, Farben und angemeldete Geräte |
+| Familie | Eltern | Zugangslinks, PINs, Sperren, Symbole, Farben, angemeldete Geräte |
 | Benachrichtigungen | alle | pro Gerät ein- und ausschaltbar, direkt auf der Startseite |
 
 ## Die Familie
@@ -52,10 +52,14 @@ schicken ihn direkt über WhatsApp. Wer den Link öffnet, ist sofort angemeldet
 und wird nicht nach der PIN gefragt; der Token verschwindet dabei aus der
 Adresszeile.
 
+**Der Link wird nur einmal gebraucht.** Danach genügt
+kinderarbeit.thiesreinhold.de – das Gerät bleibt angemeldet.
+
 * Der Token ist 128 Bit lang und damit nicht zu erraten.
 * Ein Link gilt, bis er neu erzeugt oder zurückgezogen wird – er läuft nicht ab.
-* „Neu erzeugen“ macht den bisherigen Link sofort ungültig. Das ist der Weg,
-  wenn ein Link in falsche Hände geraten ist.
+* „Neu erzeugen“ macht den bisherigen Link sofort ungültig **und meldet die
+  damit angemeldeten Geräte ab**. Das ist der Weg, wenn ein Link in falsche
+  Hände geraten ist.
 * Die Rechte bleiben dieselben: ein Kind, das über seinen Link hereinkommt,
   sieht weiterhin nur den eigenen Bereich.
 * Wer den Link eines Elternteils hat, hat Zugriff auf den gesamten
@@ -64,6 +68,37 @@ Adresszeile.
 
 Solange jemand ausschließlich den Link nutzt, bleibt die Start-PIN gültig.
 Deshalb lohnt es sich, unter **Familie** trotzdem einmal eine eigene PIN zu setzen.
+
+## Angemeldet bleiben
+
+Wer sich einmal angemeldet hat – per PIN oder per Link –, bleibt es: ein Jahr
+lang, je Gerät und Browser. Die Seite fragt danach weder nach PIN noch nach
+Link.
+
+Die PHP-Sitzung allein reicht dafür nicht. Ihr Cookie hält zwar 30 Tage, die
+Sitzungsdatei auf dem Server räumt PHP aber schon nach 24 Minuten Untätigkeit
+weg (`session.gc_maxlifetime`), und auf geteiltem Webhosting leeren fremde
+Aufräumläufe dasselbe Verzeichnis mit. Wer abends den Link bekommt, wäre am
+nächsten Morgen wieder draußen. Deshalb gibt es ein eigenes Cookie mit eigenem
+Token (`app/Remember.php`): Kommt jemand ohne Sitzung, aber mit gültigem Token,
+wird die Sitzung stillschweigend neu aufgebaut.
+
+* Das Cookie enthält `selector:validator`. Gesucht wird über den selector,
+  verglichen wird der validator gegen seinen SHA-256-Hash – wie beim PIN-Hash
+  nützt ein Blick in die Datenbank niemandem etwas.
+* Jedes Gerät hat seinen eigenen Token. Unter **Familie** steht je Profil,
+  auf wie vielen Geräten es angemeldet ist.
+* **Abmelden** oben rechts betrifft nur das Gerät, an dem man gerade sitzt.
+  **Überall abmelden** unter *Familie* beendet alle auf einmal.
+* Ein zurückgezogener oder neu erzeugter Link meldet die damit angemeldeten
+  Geräte ab – wer die PIN benutzt hat, bleibt drin.
+
+Auf einem Gerät, das sich mehrere teilen, führt das dazu, dass immer die zuletzt
+angemeldete Person erscheint. Zum Wechseln oben rechts auf **Abmelden**.
+
+Die Sitzungsdateien liegen in `data/sessions/` und nicht im gemeinsamen
+Verzeichnis des Servers – dort könnten andere Websites desselben Rechners
+mitlesen.
 
 ## WhatsApp
 
@@ -152,6 +187,7 @@ untersagt (siehe [docs/DEPLOY.md](docs/DEPLOY.md)).
 * helles und dunkles Design, für das Handy gebaut
 * CSRF-Schutz an allen Formularen, PIN-Sperre nach fünf Fehlversuchen
 * Zugangslinks mit 128-Bit-Token, jederzeit erneuerbar und zurückziehbar
+* dauerhafte Anmeldung je Gerät (selector/validator, Validator nur als Hash)
 * Web-Push ohne fremde Bibliothek (RFC 8291/8292), gegen den Testvektor geprüft
 
 ```
@@ -162,7 +198,7 @@ app/                   Anwendungscode (nicht öffentlich erreichbar)
   Repo/                Datenbankzugriff
   views/               Templates
 assets/                CSS, JavaScript, Symbole
-data/                  SQLite-Datenbank (wird beim ersten Start angelegt)
+data/                  SQLite-Datenbank und Sitzungen (beim ersten Start angelegt)
 bin/                   Kommandozeilenwerkzeuge
 docs/DEPLOY.md         Anleitung für die Einrichtung auf dem Server
 ```

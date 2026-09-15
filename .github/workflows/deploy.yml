@@ -272,6 +272,7 @@ jobs:
             --exclude 'data/*.sqlite-wal' \
             --exclude 'data/*.sqlite-shm' \
             --exclude 'data/*.log' \
+            --exclude 'data/sessions/' \
             ./ "$SSH_USER@ziel:$DEPLOY_PATH/"
 
       - name: Auf dem Server einrichten und prüfen

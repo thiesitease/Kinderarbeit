@@ -12,7 +12,7 @@ Das bitte beibehalten.
 ## Befehle
 
 ```bash
-php bin/selftest.php                 # 148 Prüfungen der Rechenlogik, ohne Webserver
+php bin/selftest.php                 # 180 Prüfungen der Rechenlogik, ohne Webserver
 php bin/demo-data.php --force        # Beispielbestand zum Ausprobieren (löscht die DB!)
 php bin/zugangslink.php Emilius      # Zugangslink erzeugen (Rettungsanker per SSH)
 php bin/reset-pin.php Thies 4711     # PIN zurücksetzen, wenn niemand mehr reinkommt
@@ -59,6 +59,31 @@ Monate nach. Gegen Doppelbuchung schützt `UNIQUE(expense_id, month)` in
 übersprungen – sonst wäre der bequeme Zugang keiner – und sofort weitergeleitet,
 damit der Token nicht in der Adresszeile stehen bleibt. Rechte hängen ausschließlich
 an `users.role`, nie am Anmeldeweg.
+
+**Angemeldet bleiben geht nicht über die Sitzung.** Deren Cookie lebt zwar
+30 Tage, die Sitzungsdatei räumt PHP aber nach `session.gc_maxlifetime` weg –
+voreingestellt 24 Minuten Untätigkeit –, und auf geteiltem Webhosting leeren
+fremde Aufräumläufe dasselbe Verzeichnis mit. Deshalb `app/Remember.php`: ein
+eigenes Cookie `selector:validator`, ein Jahr gültig, je Gerät ein Token.
+Gesucht wird über den selector, verglichen der validator gegen seinen
+SHA-256-Hash mit `hash_equals`. `Auth::restore()` läuft früh in `index.php` und
+baut die Sitzung stillschweigend neu auf.
+
+Das Cookie hält auch fest, **ob der Zugang über den Link kam** (`via_link`) –
+sonst fragte die Anwendung beim nächsten Besuch doch noch nach der PIN und der
+bequeme Zugang wäre keiner. `Users::createToken()` und `clearToken()` rufen
+`Remember::forgetLinkDevices()`: ein zurückgezogener Link soll wirklich nicht
+mehr gelten, auch nicht über ein Gerät, das damit angemeldet wurde. Wer die PIN
+benutzt hat, bleibt drin.
+
+`app_start_session()` legt die Sitzungen nach `data/sessions/` statt ins
+gemeinsame Verzeichnis des Servers. Wer das tut, muss auch selbst aufräumen –
+daher dort `session.gc_probability`. Das Verzeichnis ist in der `.gitignore`
+und im `rsync`-Aufruf des Workflows ausgenommen, sonst löschte `--delete` es
+bei jeder Veröffentlichung.
+
+`is_https()` steht in `helpers.php` und nicht in der `bootstrap.php`: `base_url()`
+und die Cookies brauchen es, und die Werkzeuge in `bin/` laden nur die Helfer.
 
 **Routing ohne mod_rewrite.** Alles läuft über `?p=seite` in `index.php`. Links werden
 mit `url()` gebaut. Bewusst so, damit die Anwendung auf jedem Webhosting läuft.

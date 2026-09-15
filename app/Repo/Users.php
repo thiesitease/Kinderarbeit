@@ -98,19 +98,31 @@ final class Users
      */
     public static function createToken(int $id): string
     {
+        $bisher = self::find($id)['access_token'] ?? null;
+
         $token = random_token(16);
         Database::pdo()->prepare(
             'UPDATE users SET access_token = :token, token_created_at = :now, token_used_at = NULL WHERE id = :id'
         )->execute(['token' => $token, 'now' => now(), 'id' => $id]);
+
+        // Der bisherige Link soll wirklich nicht mehr gelten. Ohne das
+        // bliebe ein Geraet, das damit dauerhaft angemeldet wurde, drin –
+        // und genau das ist der Fall, fuer den man den Link neu erzeugt.
+        if ($bisher !== null) {
+            Remember::forgetLinkDevices($id);
+        }
+
         return $token;
     }
 
-    /** Zugangslink zurueckziehen. */
+    /** Zugangslink zurueckziehen – samt der damit angemeldeten Geraete. */
     public static function clearToken(int $id): void
     {
         Database::pdo()->prepare(
             'UPDATE users SET access_token = NULL, token_created_at = NULL, token_used_at = NULL WHERE id = :id'
         )->execute(['id' => $id]);
+
+        Remember::forgetLinkDevices($id);
     }
 
     /** Profil zu einem Zugangslink finden. */

@@ -159,6 +159,26 @@ function validate_pin(string $pin, ?string &$error = null, int $min = 4, int $ma
 }
 
 /**
+ * Laeuft der Aufruf ueber HTTPS? Auch hinter einem vorgeschalteten Proxy,
+ * der die Verschluesselung selbst beendet.
+ *
+ * Steht hier und nicht in der bootstrap.php, weil base_url() und die Cookies
+ * in Remember darauf angewiesen sind - und die Werkzeuge in bin/ laden nur
+ * die Helfer, nicht den Web-Einstieg.
+ */
+function is_https(): bool
+{
+    if (!empty($_SERVER['HTTPS']) && strtolower((string)$_SERVER['HTTPS']) !== 'off') {
+        return true;
+    }
+    if (($_SERVER['SERVER_PORT'] ?? '') === '443') {
+        return true;
+    }
+    $proto = $_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '';
+    return strtolower((string)$proto) === 'https';
+}
+
+/**
  * Vollstaendige Adresse der Anwendung, z. B.
  * https://kinderarbeit.thiesreinhold.de/
  */

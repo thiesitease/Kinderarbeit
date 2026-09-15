@@ -1,5 +1,5 @@
 <?php
-/** @var array $users, $colors, $emojis, $me, $pushDevices */
+/** @var array $users, $colors, $emojis, $me, $pushDevices, $loggedIn */
 defined('KINDERARBEIT') || exit;
 ?>
 
@@ -13,7 +13,8 @@ defined('KINDERARBEIT') || exit;
   <span>
     <strong>Zwei Wege hinein:</strong> Profil antippen und PIN eingeben – oder der persönliche
     Zugangslink, den ihr hier erzeugt und per WhatsApp verschickt. Wer den Link öffnet, ist sofort
-    angemeldet und wird nicht nach der PIN gefragt.
+    angemeldet, wird nicht nach der PIN gefragt und <strong>bleibt auf diesem Gerät angemeldet</strong> –
+    danach genügt kinderarbeit.thiesreinhold.de.
     Nach <?= Auth::MAX_ATTEMPTS ?> falschen PIN-Eingaben wird ein Profil für
     <?= Auth::LOCK_MINUTES ?> Minuten gesperrt; die Sperre hebt ihr hier sofort wieder auf.
   </span>
@@ -57,21 +58,41 @@ defined('KINDERARBEIT') || exit;
         <?php elseif ((int)$user['failed_logins'] > 0): ?>
           <span class="pill"><?= (int)$user['failed_logins'] ?> Fehlversuch<?= (int)$user['failed_logins'] === 1 ? '' : 'e' ?></span>
         <?php endif; ?>
-        <?php $geraete = $pushDevices[$userId] ?? 0; ?>
+        <?php
+        $geraete   = $pushDevices[$userId] ?? 0;
+        $angemeldet = $loggedIn[$userId] ?? 0;
+        ?>
+        <?php if ($angemeldet > 0): ?>
+          <span class="pill pill--positive">📱 auf <?= $angemeldet ?> Gerät<?= $angemeldet === 1 ? '' : 'en' ?> angemeldet</span>
+        <?php endif; ?>
         <?php if ($geraete > 0): ?>
           <span class="pill pill--positive">🔔 <?= $geraete ?> Gerät<?= $geraete === 1 ? '' : 'e' ?></span>
         <?php endif; ?>
       </div>
 
-      <?php if ($geraete > 0): ?>
-        <form method="post" action="<?= e(url('familie-aktion')) ?>" class="mt-2"
-              data-confirm="Alle Geräte von <?= e($user['name']) ?> abmelden? Benachrichtigungen lassen sich dort jederzeit wieder einschalten.">
-          <?= Csrf::field() ?>
-          <input type="hidden" name="id" value="<?= $userId ?>">
-          <button class="btn btn--ghost btn--sm" type="submit" name="action" value="push-loeschen">
-            Benachrichtigungen abmelden
-          </button>
-        </form>
+      <?php if ($angemeldet > 0 || $geraete > 0): ?>
+        <div class="btn-row mt-2">
+          <?php if ($angemeldet > 0): ?>
+            <form method="post" action="<?= e(url('familie-aktion')) ?>" class="inline-form"
+                  data-confirm="<?= e($user['name']) ?> überall abmelden? Danach wird wieder nach PIN oder Zugangslink gefragt.">
+              <?= Csrf::field() ?>
+              <input type="hidden" name="id" value="<?= $userId ?>">
+              <button class="btn btn--ghost btn--sm" type="submit" name="action" value="geraete-abmelden">
+                Überall abmelden
+              </button>
+            </form>
+          <?php endif; ?>
+          <?php if ($geraete > 0): ?>
+            <form method="post" action="<?= e(url('familie-aktion')) ?>" class="inline-form"
+                  data-confirm="Benachrichtigungen für alle Geräte von <?= e($user['name']) ?> abmelden? Sie lassen sich dort jederzeit wieder einschalten.">
+              <?= Csrf::field() ?>
+              <input type="hidden" name="id" value="<?= $userId ?>">
+              <button class="btn btn--ghost btn--sm" type="submit" name="action" value="push-loeschen">
+                Benachrichtigungen abmelden
+              </button>
+            </form>
+          <?php endif; ?>
+        </div>
       <?php endif; ?>
 
       <?php if ($isLocked): ?>
@@ -220,6 +241,8 @@ defined('KINDERARBEIT') || exit;
       <li>Eine Bestätigung lässt sich im Verlauf zurücknehmen; die Gegenbuchung bleibt sichtbar.</li>
       <li>Gelöschte Aufgaben mit Historie werden nur pausiert, damit alte Buchungen nachvollziehbar bleiben.</li>
       <li>Ein Zugangslink gilt, bis ihr ihn neu erzeugt oder zurückzieht – er läuft nicht von selbst ab.</li>
+      <li>Wer sich einmal anmeldet, bleibt ein Jahr lang angemeldet – pro Gerät und Browser. „Überall abmelden“ beendet das sofort, „Abmelden“ oben rechts nur auf dem Gerät, an dem man gerade sitzt.</li>
+      <li>Wird ein Link neu erzeugt oder zurückgezogen, fliegen die damit angemeldeten Geräte mit heraus. Wer die PIN benutzt hat, bleibt angemeldet – sein Zugang hängt nicht am Link.</li>
       <li>Die WhatsApp-Knöpfe verschicken nichts von allein: sie öffnen WhatsApp mit fertigem Text, abgeschickt wird von Hand.</li>
       <li>Benachrichtigungen werden auf jedem Gerät einzeln eingeschaltet – unten auf der eigenen Startseite. Hier steht nur, wie viele Geräte angemeldet sind.</li>
       <li>Solange jemand nur über den Link hereinkommt, bleibt seine Start-PIN gültig. Setzt sie deshalb am besten trotzdem einmal neu.</li>
