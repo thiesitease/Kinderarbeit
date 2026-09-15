@@ -91,6 +91,7 @@ final class Database
             access_token    TEXT UNIQUE,
             token_created_at TEXT,
             token_used_at   TEXT,
+            phone           TEXT,
             created_at      TEXT    NOT NULL
         );
 
@@ -177,6 +178,7 @@ final class Database
         self::addColumn($pdo, 'users', 'access_token', 'TEXT');
         self::addColumn($pdo, 'users', 'token_created_at', 'TEXT');
         self::addColumn($pdo, 'users', 'token_used_at', 'TEXT');
+        self::addColumn($pdo, 'users', 'phone', 'TEXT');
 
         $pdo->exec('CREATE UNIQUE INDEX IF NOT EXISTS idx_users_token ON users (access_token) WHERE access_token IS NOT NULL');
     }

@@ -132,6 +132,19 @@ final class Users
         )->execute(['now' => now(), 'id' => $id]);
     }
 
+    /** Handynummer hinterlegen oder mit null entfernen. */
+    public static function setPhone(int $id, ?string $number): void
+    {
+        Database::pdo()->prepare('UPDATE users SET phone = :phone WHERE id = :id')
+            ->execute(['phone' => $number, 'id' => $id]);
+    }
+
+    /** Eltern, die per WhatsApp erreichbar sind. */
+    public static function parentsWithPhone(): array
+    {
+        return array_values(array_filter(self::parents(), static fn (array $u): bool => !empty($u['phone'])));
+    }
+
     /** Sperre eines Profils vorzeitig aufheben. */
     public static function unlock(int $id): void
     {

@@ -158,7 +158,23 @@ defined('KINDERARBEIT') || exit;
       <form method="post" action="<?= e(url('familie-aktion')) ?>" class="mt-2">
         <?= Csrf::field() ?>
         <input type="hidden" name="id" value="<?= $userId ?>">
-        <label class="field__label" for="emoji-<?= $userId ?>">Symbol und Farbe</label>
+
+        <label class="field__label" for="phone-<?= $userId ?>">Handynummer für WhatsApp</label>
+        <input class="input" type="tel" id="phone-<?= $userId ?>" name="phone"
+               inputmode="tel" autocomplete="tel" maxlength="24"
+               placeholder="0171 1234567"
+               value="<?= e(Phone::format($user['phone'] ?? null)) ?>">
+        <p class="field__hint">
+          <?php if (!empty($user['phone'])): ?>
+            Mit dieser Nummer erscheinen WhatsApp-Knöpfe, die <?= e($user['name']) ?> direkt
+            Bescheid geben. Zum Entfernen das Feld leeren.
+          <?php else: ?>
+            Freiwillig. Ist sie hinterlegt, erscheinen Knöpfe, die <?= e($user['name']) ?>
+            mit einem Tipp per WhatsApp Bescheid geben.
+          <?php endif; ?>
+        </p>
+
+        <label class="field__label mt-2" for="emoji-<?= $userId ?>">Symbol und Farbe</label>
         <div class="row row--tight">
           <input class="input" type="text" id="emoji-<?= $userId ?>" name="emoji" maxlength="8"
                  style="width:4rem;text-align:center;font-size:1.25rem" value="<?= e($user['emoji']) ?>">
@@ -189,6 +205,7 @@ defined('KINDERARBEIT') || exit;
       <li>Eine Bestätigung lässt sich im Verlauf zurücknehmen; die Gegenbuchung bleibt sichtbar.</li>
       <li>Gelöschte Aufgaben mit Historie werden nur pausiert, damit alte Buchungen nachvollziehbar bleiben.</li>
       <li>Ein Zugangslink gilt, bis ihr ihn neu erzeugt oder zurückzieht – er läuft nicht von selbst ab.</li>
+      <li>Die WhatsApp-Knöpfe verschicken nichts von allein: sie öffnen WhatsApp mit fertigem Text, abgeschickt wird von Hand.</li>
       <li>Solange jemand nur über den Link hereinkommt, bleibt seine Start-PIN gültig. Setzt sie deshalb am besten trotzdem einmal neu.</li>
     </ul>
   </div>
