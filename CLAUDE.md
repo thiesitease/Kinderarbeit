@@ -176,6 +176,17 @@ Nachmittag gekostet und sind nirgends sonst dokumentiert:
   Websites des Pakets nebeneinander – `rsync --delete` würde sie löschen. Der Schritt
   „Zielverzeichnis prüfen" blockiert das; diese Prüfung nicht entfernen.
 
+**Wartung ohne SSH-Sitzung.** `.github/workflows/wartung.yml` läuft nur von Hand
+(Actions → Wartung → „Run workflow“) und führt über dieselben Secrets einen
+Befehl auf dem Server aus – **eine** SSH-Verbindung pro Lauf, dieselbe
+`concurrency`-Gruppe wie die Veröffentlichung, damit nie beides gleichzeitig
+läuft. Zum Löschen muss im Feld „bestaetigen“ genau `ja` stehen.
+
+Was dort bewusst **nicht** auswählbar ist: „alles löschen“ (macht die
+Zugangslinks ungültig – gehört an eine Stelle, an der man tippt statt klickt)
+und das Anzeigen der Zugangslinks (die stünden danach dauerhaft im Protokoll
+des Laufs). Beides weiter von Hand über SSH.
+
 **Was die AGB von manitu für SSH-Benutzer verbieten** und was deshalb hier nicht
 vorkommen darf: eigene `crontab`-Einträge (dafür gibt es das Cronjob-Feature im
 Kundenbereich), dauerhafte oder Hintergrundprozesse, alles was auf einem Port lauscht,
