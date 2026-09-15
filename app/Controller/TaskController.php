@@ -84,6 +84,21 @@ final class TaskController
         } else {
             Tasks::create($data);
             Flash::success('Die Aufgabe „' . $data['title'] . '“ ist jetzt für die Kinder sichtbar.');
+
+            $nachricht = [
+                'title' => '🆕 Neue Aufgabe: ' . $data['title'],
+                'body'  => Money::format($amount) . ' – wer mag?',
+                'url'   => url('kind'),
+                'tag'   => 'neue-aufgabe',
+            ];
+
+            // Eine Aufgabe fuer ein bestimmtes Kind geht nur an dieses.
+            if ($data['assigned_to'] !== null) {
+                $nachricht['body'] = Money::format($amount) . ' – die ist für dich.';
+                Push::toUser((int)$data['assigned_to'], $nachricht);
+            } else {
+                Push::toChildren($nachricht);
+            }
         }
 
         redirect('aufgaben');

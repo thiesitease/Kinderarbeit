@@ -12,7 +12,7 @@ Das bitte beibehalten.
 ## Befehle
 
 ```bash
-php bin/selftest.php                 # 70 Prüfungen der Rechenlogik, ohne Webserver
+php bin/selftest.php                 # 148 Prüfungen der Rechenlogik, ohne Webserver
 php bin/demo-data.php --force        # Beispielbestand zum Ausprobieren (löscht die DB!)
 php bin/zugangslink.php Emilius      # Zugangslink erzeugen (Rettungsanker per SSH)
 php bin/reset-pin.php Thies 4711     # PIN zurücksetzen, wenn niemand mehr reinkommt
@@ -68,6 +68,38 @@ mit `url()` gebaut. Bewusst so, damit die Anwendung auf jedem Webhosting läuft.
 nicht – dafür gibt es `Database::addColumn()`, das `PRAGMA table_info` prüft und
 notfalls `ALTER TABLE` ausführt. Neue Spalten immer dort eintragen, sonst bricht
 das nächste Update auf dem Server.
+
+**Benachrichtigungen sind selbst gebaut.** `app/WebPush.php` macht Web-Push nach
+RFC 8291 (Verschlüsselung) und RFC 8292 (VAPID) – ohne Bibliothek, weil es keinen
+Composer gibt und openssl plus `hash_hkdf` genügen. Die Verschlüsselung ist gegen
+den **Testvektor aus RFC 8291, Anhang A** geprüft; der Test steht in
+`bin/selftest.php`. Wer dort etwas ändert, muss diesen Test bestehen – ein Fehler
+fällt sonst erst auf, wenn niemand mehr Benachrichtigungen bekommt.
+
+Verschickt wird **mitten im Seitenaufruf** und parallel (`curl_multi`), weil das
+Hosting keine Hintergrundprozesse erlaubt. `Push::deliver()` wirft nie: eine
+Bestätigung darf nicht daran scheitern, dass Google gerade nicht antwortet.
+Antwortet der Push-Dienst mit 404 oder 410, ist das Abonnement endgültig weg und
+wird gelöscht – sonst sammeln sich tote Einträge an, die jeden Versand bremsen.
+
+Ein Abonnement gehört zu einem **Gerät**, nicht zu einer Person; der Schlüssel ist
+`endpoint`. Meldet sich dort jemand anderes an, übernimmt `ON CONFLICT (endpoint)`
+den Eintrag – deshalb meldet `assets/app.js` ein vorhandenes Abo einmal je Sitzung
+nach. Ohne das bekäme auf dem Familien-Tablet noch das vorige Kind die Nachrichten.
+
+Das **VAPID-Schlüsselpaar** entsteht einmal und liegt in `settings`. Ein neues Paar
+macht alle bestehenden Abonnements ungültig – also nie neu erzeugen.
+
+**`sw.js` gehört ins Wurzelverzeichnis.** Der Geltungsbereich eines Service Workers
+reicht nur so weit wie sein eigener Ordner; unter `assets/` läge er außerhalb der
+Anwendung. Er speichert bewusst nichts zwischen – die Seiten ändern sich mit jeder
+Bestätigung, ein Zwischenspeicher zeigte veraltete Kontostände. Die `.htaccess`
+nimmt ihn deshalb vom Zwischenspeichern aus.
+
+**`[hidden]` braucht `!important`.** Die Browser-Regel `[hidden] { display: none }`
+verliert gegen jede eigene Regel mit `display` – etwa `.row { display: flex }`.
+In `assets/app.css` steht deshalb ganz bewusst `[hidden] { display: none !important }`.
+Ohne das wären versteckte Elemente trotzdem zu sehen.
 
 **Abschottung.** `app/`, `data/`, `bin/` und `docs/` sind über `.htaccess` gesperrt;
 zusätzlich beginnt jede PHP-Datei außerhalb des Einstiegspunkts mit

@@ -540,6 +540,20 @@ a:hover { color: color-mix(in srgb, var(--accent-ink) 75%, var(--text)); }
 }
 .notice a { color: inherit; font-weight: 700; }
 
+/* --- Benachrichtigungen ----------------------------------------------------- */
+
+/* Das Kaestchen steht auf jeder Startseite. Damit es dort nicht laut wird,
+   steht es ganz unten und ist nur gestrichelt umrandet. */
+.push { border-style: dashed; }
+.push__icon { font-size: 1.5rem; line-height: 1; flex: none; }
+.push__title { font-weight: 650; }
+/* Der Text darf schmaler werden, der Knopf nicht – sonst steht auf dem Handy
+   "inschalte" darauf. Die Grundbreite ist so gewaehlt, dass der Knopf auf dem
+   Handy in die naechste Zeile rutscht, statt den Text umbrechen zu lassen;
+   auf breiten Schirmen steht beides nebeneinander. */
+.push__text { flex: 1 1 16rem; min-width: 0; }
+.push .btn { flex: none; }
+
 /* --- Tabellen --------------------------------------------------------------- */
 
 .table-wrap { overflow-x: auto; }
@@ -608,6 +622,11 @@ a:hover { color: color-mix(in srgb, var(--accent-ink) 75%, var(--text)); }
 }
 
 /* --- Hilfsklassen ----------------------------------------------------------- */
+
+/* Die Browser-Regel fuer [hidden] ist "display: none", verliert aber gegen
+   jede eigene Regel mit display – etwa .row weiter unten. Ohne dieses
+   !important waere ein verstecktes Element trotzdem zu sehen. */
+[hidden] { display: none !important; }
 
 .row { display: flex; align-items: center; gap: .6rem; flex-wrap: wrap; }
 .row--tight { gap: .35rem; }

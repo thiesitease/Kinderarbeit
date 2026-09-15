@@ -23,6 +23,7 @@ require APP_DIR . '/Controller/TaskController.php';
 require APP_DIR . '/Controller/ExpenseController.php';
 require APP_DIR . '/Controller/LedgerController.php';
 require APP_DIR . '/Controller/FamilyController.php';
+require APP_DIR . '/Controller/PushController.php';
 
 // Datenbank oeffnen (legt sie beim ersten Aufruf an) und faellige Abbuchungen nachholen.
 Database::pdo();
@@ -92,6 +93,10 @@ try {
         case 'buchung':        LedgerController::form();           break;
         case 'buchung-save':   LedgerController::save();           break;
         case 'verlauf':        LedgerController::history();        break;
+
+        // --- Benachrichtigungen ----------------------------------------------
+        case 'push-an':        PushController::subscribe();        break;
+        case 'push-aus':       PushController::unsubscribe();      break;
 
         // --- Familie und Einstellungen ---------------------------------------
         case 'familie':        FamilyController::index();          break;
