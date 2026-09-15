@@ -17,7 +17,7 @@ Das bitte beibehalten.
 ## Commits
 
 Autor und Committer sind immer **Thies Reinhold**
-`<65960018+thiesitease@users.noreply.github.com>`, auch wenn Claude die Arbeit macht.
+`<65960018+thiesitease@users.noreply.github.com>`.
 Keine `Co-Authored-By:`-Zeile, keine `Claude-Session:`-Zeile, kein „Generated with“-Hinweis
 in der Nachricht.
 
