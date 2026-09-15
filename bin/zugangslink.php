@@ -14,8 +14,10 @@ declare(strict_types=1);
 
 require dirname(__DIR__) . '/app/cli.php';
 
-$base = getenv('KINDERARBEIT_URL') ?: 'https://kinderarbeit.example.de/';
-$base = rtrim($base, '/') . '/';
+// Die Adresse der Anwendung steht bewusst nicht im Repository. Ohne
+// KINDERARBEIT_URL zeigt das Werkzeug nur den Teil hinter der Adresse.
+$base = trim((string)getenv('KINDERARBEIT_URL'));
+$base = $base !== '' ? rtrim($base, '/') . '/' : '…/';
 
 $link = static fn (string $token): string => $base . '?z=' . $token;
 
@@ -30,7 +32,7 @@ if ($name === null) {
     }
     echo str_repeat('─', 72) . "\n";
     echo "Neuen Link erzeugen: php bin/zugangslink.php <Name>\n";
-    echo "Andere Adresse:      KINDERARBEIT_URL=https://… php bin/zugangslink.php\n\n";
+    echo "Volle Links:         KINDERARBEIT_URL=https://… php bin/zugangslink.php\n\n";
     exit(0);
 }
 

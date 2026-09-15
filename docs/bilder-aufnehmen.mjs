@@ -9,12 +9,16 @@
  *     php -S 127.0.0.1:8080 &
  *     node docs/bilder-aufnehmen.mjs
  *
- * Voraussetzung ist Playwright. Der Pfad zum Paket steht unten in der
- * import-Zeile und muss ggf. angepasst werden.
+ * Voraussetzung ist Playwright (npm i -D playwright). Steckt es woanders,
+ * die import-Zeile anpassen.
  */
 
-const BASE = 'http://127.0.0.1:8080';
-const OUT  = '/home/user/Kinderarbeit/docs/bilder';
+import { chromium } from 'playwright';
+import { fileURLToPath } from 'node:url';
+import { dirname, join } from 'node:path';
+
+const BASE = process.env.BILDER_BASE ?? 'http://127.0.0.1:8080';
+const OUT  = process.env.BILDER_OUT ?? join(dirname(fileURLToPath(import.meta.url)), 'bilder');
 
 // Headless-Chromium kann sich bei keinem echten Push-Dienst anmelden.
 // Ersetzt wird genau diese Grenze; die Oberfläche darüber ist die echte.

@@ -180,7 +180,7 @@ if ($modus === 'alles') {
     }
 
     echo "Die Datenbank ist gelöscht.\n";
-    echo "Beim nächsten Aufruf von kinderarbeit.example.de entsteht sie neu.\n\n";
+    echo "Beim nächsten Aufruf der Seite entsteht sie neu.\n\n";
     exit(0);
 }
 

@@ -14,7 +14,7 @@ defined('KINDERARBEIT') || exit;
     <strong>Zwei Wege hinein:</strong> Profil antippen und PIN eingeben – oder der persönliche
     Zugangslink, den ihr hier erzeugt und per WhatsApp verschickt. Wer den Link öffnet, ist sofort
     angemeldet, wird nicht nach der PIN gefragt und <strong>bleibt auf diesem Gerät angemeldet</strong> –
-    danach genügt kinderarbeit.example.de.
+    danach genügt die Adresse der Seite.
     Nach <?= Auth::MAX_ATTEMPTS ?> falschen PIN-Eingaben wird ein Profil für
     <?= Auth::LOCK_MINUTES ?> Minuten gesperrt; die Sperre hebt ihr hier sofort wieder auf.
   </span>

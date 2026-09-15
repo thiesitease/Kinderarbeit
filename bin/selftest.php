@@ -300,7 +300,7 @@ $kopfzeile = WebPush::vapidHeader(
     'https://fcm.googleapis.com/fcm/send/abcdef',
     $paar['private_pem'],
     $paar['public'],
-    'https://kinderarbeit.example.de/'
+    'https://kinderarbeit.example/'
 );
 
 check('Kopfzeile beginnt mit "vapid "', str_starts_with($kopfzeile, 'vapid t='), true);
@@ -317,7 +317,7 @@ check('JWT ist als JWT ausgewiesen', $jwtKopf['typ'] ?? null, 'JWT');
 
 $jwtNutz = json_decode(WebPush::b64urlDecode($teile[1]), true);
 check('Empfaenger ist der Push-Dienst ohne Pfad', $jwtNutz['aud'] ?? null, 'https://fcm.googleapis.com');
-check('Absender ist gesetzt', $jwtNutz['sub'] ?? null, 'https://kinderarbeit.example.de/');
+check('Absender ist gesetzt', $jwtNutz['sub'] ?? null, 'https://kinderarbeit.example/');
 check('Ablauf liegt in der Zukunft', ($jwtNutz['exp'] ?? 0) > time(), true);
 check('Ablauf liegt hoechstens 24 Stunden weg', ($jwtNutz['exp'] ?? 0) <= time() + 86400, true);
 

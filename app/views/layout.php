@@ -87,7 +87,7 @@ $pendingForNav = ($me && $me['role'] === 'parent') ? Completions::pendingCount()
     </main>
 
     <footer class="footer">
-      Kinderarbeit · kinderarbeit.example.de
+      Kinderarbeit
     </footer>
   </div>
 

@@ -93,6 +93,6 @@ $parents  = array_filter($users, static fn (array $u): bool => $u['role'] === 'p
 
     <?php endif; ?>
 
-    <p class="footer">Kinderarbeit · kinderarbeit.example.de</p>
+    <p class="footer">Kinderarbeit</p>
   </div>
 </div>

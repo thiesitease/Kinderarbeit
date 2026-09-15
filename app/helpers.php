@@ -179,8 +179,7 @@ function is_https(): bool
 }
 
 /**
- * Vollstaendige Adresse der Anwendung, z. B.
- * https://kinderarbeit.example.de/
+ * Vollstaendige Adresse der Anwendung, so wie der Browser sie aufgerufen hat.
  */
 function base_url(): string
 {

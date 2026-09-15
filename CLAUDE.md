@@ -3,8 +3,13 @@
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 Kinderarbeit ist eine Familienanwendung für Aufgaben und Taschengeld, veröffentlicht
-auf **kinderarbeit.example.de**. Eltern stellen Aufgaben mit Betrag ein, Kinder
-haken sie ab, Eltern bestätigen einmal, dann wird gutgeschrieben.
+auf einer eigenen Subdomain. Eltern stellen Aufgaben mit Betrag ein, Kinder haken sie
+ab, Eltern bestätigen einmal, dann wird gutgeschrieben.
+
+**Die Adresse der Seite gehört nicht ins Repository** – weder in Code noch in
+Dokumentation, Kommentare oder Commit-Nachrichten. Sie steht als Secret `SITE_URL`
+in den GitHub-Einstellungen; Werkzeuge auf der Kommandozeile nehmen sie aus der
+Umgebungsvariablen `KINDERARBEIT_URL`. In Beispielen stehen Platzhalter.
 
 **Alles ist auf Deutsch** – Oberfläche, Kommentare, Commit-Nachrichten, Dokumentation.
 Das bitte beibehalten.
@@ -48,10 +53,27 @@ genug, um immer ganz zu laufen.
 
 ## Architektur
 
-**Konten sind ein Buchungsjournal, keine Salden.** `ledger` wird nur angehängt;
-der Kontostand ist `SUM(amount_cents)`. Positive Beträge sind Gutschriften, negative
-Abbuchungen. Nichts wird je überschrieben – eine zurückgenommene Bestätigung erzeugt
-eine Gegenbuchung, kein `DELETE`. Wer einen Betrag „korrigieren" will, bucht dagegen.
+**Konten sind ein Buchungsjournal, keine Salden.** Der Kontostand ist immer
+`SUM(amount_cents)`; nirgends wird ein Saldo gespeichert. Positive Beträge sind
+Gutschriften, negative Abbuchungen. Der Regelweg ist Anhängen: eine zurückgenommene
+Bestätigung erzeugt eine Gegenbuchung, kein `DELETE`.
+
+**Ändern und Löschen gibt es trotzdem** – über `Ledger::update()` und
+`Ledger::delete()`, erreichbar für Eltern im Verlauf und auf der Kindseite. Beides
+geht durch diese beiden Methoden, nie mit eigenem SQL, denn daran hängt mehr als die
+eine Zeile:
+
+* Eine geänderte Buchung merkt sich `updated_by`/`updated_at` und wird überall als
+  „geändert" ausgewiesen, auch dem Kind gegenüber.
+* Ändert sich der Betrag einer Aufgaben-Gutschrift, zieht `completions.amount_cents`
+  mit. Sonst bucht eine spätere Rücknahme den alten Betrag gegen.
+* Beim Löschen einer Gutschrift gilt die Meldung als abgelehnt, und eine vorhandene
+  Gegenbuchung aus einer Rücknahme fällt mit weg – sonst bliebe das Konto um diesen
+  Betrag im Minus. Beim Löschen der Gegenbuchung gilt die Bestätigung wieder.
+* Beim Löschen einer festen Ausgabe bleibt der Merker in `expense_bookings` stehen
+  (`ledger_id` wird `NULL`), damit `Billing::run()` den Monat nicht neu abbucht.
+  Dafür ist die Spalte nullable mit `ON DELETE SET NULL`; ältere Datenbanken baut
+  `Database::relaxExpenseBookings()` einmalig um.
 
 **Beträge sind immer ganzzahlige Cent.** Nirgends Fließkomma. `Money::parse()` nimmt
 Nutzereingaben („2,50", „2.50", „19,90 €"), `Money::format()` gibt deutsch formatiert
@@ -174,7 +196,7 @@ Ausführlich in `docs/DEPLOY.md`. Die folgenden Punkte haben jeweils einen halbe
 Nachmittag gekostet und sind nirgends sonst dokumentiert:
 
 * **Der SSH-Benutzer ist nicht der Kunden-Login.** manitu legt dafür einen eigenen
-  an, etwa `ssh000000000` – zu finden im Kundenbereich unter „SSH-Benutzer". Der
+  an (die Form ist `ssh` plus Ziffern) – zu finden im Kundenbereich unter „SSH-Benutzer". Der
   Kunden-Login (`pete\thies`) funktioniert dort nicht.
 * **Nur Schlüssel, kein Passwort.** Der öffentliche Schlüssel muss über den
   Kundenbereich hinterlegt werden; `ssh-copy-id` scheitert zwangsläufig, weil es
@@ -185,12 +207,13 @@ Nachmittag gekostet und sind nirgends sonst dokumentiert:
   SSH-Verbindungen pro Lauf.** Keine Wiederholungsschleifen, kein `ssh-keyscan`,
   keinen separaten Verbindungstest hinzufügen – das verschlimmert es. Aus demselben
   Grund ist `SSH_KNOWN_HOSTS` als Secret erforderlich.
-* **`rsync` braucht `--omit-dir-times`.** Das Zielverzeichnis gehört `site000000000`,
-  angemeldet wird als `ssh000000000`; den Zeitstempel darf nur der Eigentümer setzen.
+* **`rsync` braucht `--omit-dir-times`.** Das Zielverzeichnis gehört dem Site-Benutzer
+  (`site…`), angemeldet wird als SSH-Benutzer (`ssh…`); den Zeitstempel darf nur der
+  Eigentümer setzen.
   Ohne das Flag endet ein vollständig geglückter Transfer mit Exit-Code 23, und die
   folgenden Schritte laufen nicht mehr.
-* **`data/` braucht 775.** Der Webserver läuft als `site000000000`, übertragen wird
-  als `ssh000000000`; ohne Gruppenschreibrecht kann die Anwendung die Datenbank nicht
+* **`data/` braucht 775.** Der Webserver läuft als Site-Benutzer, übertragen wird
+  als SSH-Benutzer; ohne Gruppenschreibrecht kann die Anwendung die Datenbank nicht
   anlegen. Der letzte Schritt des Workflows setzt das.
 * **`DEPLOY_PATH` zeigt auf die Subdomain, niemals auf `web/`.** Dort liegen alle
   Websites des Pakets nebeneinander – `rsync --delete` würde sie löschen. Der Schritt

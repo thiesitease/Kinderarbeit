@@ -1,7 +1,7 @@
 # Kinderarbeit
 
 Aufgaben, Taschengeld und Konto für die ganze Familie –
-für **kinderarbeit.example.de**.
+auf einer eigenen kleinen Seite.
 
 Eltern stellen Aufgaben mit einem Betrag ein, die Kinder haken sie ab,
 die Eltern bestätigen sie einmal, und erst dann wird der Betrag dem Konto
@@ -43,7 +43,7 @@ gehört ausdrücklich nicht zur Anwendung).
 | | |
 |---|---|
 | <img src="docs/bilder/03-kind-aufgaben.png" width="380"><br>**Was du machen kannst.** Oben das Guthaben, darunter alle offenen Aufgaben mit Betrag. Ein Tipp auf „Erledigt ✓“ meldet sie den Eltern – gemeldete Aufgaben sind ausgegraut und warten. | <img src="docs/bilder/04-kind-bescheid.png" width="380"><br>**Bescheid sagen.** Wartet etwas auf Bestätigung, kann das Kind Mama oder Papa mit einem Tipp per WhatsApp erinnern. Der Text ist fertig vorbereitet, abgeschickt wird von Hand. |
-| <img src="docs/bilder/05-kind-monat.png" width="380"><br>**Der Monat auf einen Blick.** Verdient, feste Ausgaben, ausgezahlt – und der **Rest im Monat**. Die vier Kacheln gehen immer auf; darunter steht, was automatisch abgeht. | <img src="docs/bilder/06-kind-konto.png" width="380"><br>**Mein Konto.** Jede einzelne Buchung, neueste zuerst, mit Datum und Herkunft. Nichts wird je überschrieben – auch eine zurückgenommene Bestätigung steht als eigene Gegenbuchung drin. |
+| <img src="docs/bilder/05-kind-monat.png" width="380"><br>**Der Monat auf einen Blick.** Verdient, feste Ausgaben, ausgezahlt – und der **Rest im Monat**. Die vier Kacheln gehen immer auf; darunter steht, was automatisch abgeht. | <img src="docs/bilder/06-kind-konto.png" width="380"><br>**Mein Konto.** Jede einzelne Buchung, neueste zuerst, mit Datum und Herkunft. Eine zurückgenommene Bestätigung steht als eigene Gegenbuchung drin; was die Eltern nachträglich ändern, ist als „geändert“ gekennzeichnet. |
 | <img src="docs/bilder/07-kind-verlauf.png" width="380"><br>**Mein Verlauf.** Alle gemeldeten Aufgaben mit ihrem Stand: wartet, bestätigt oder abgelehnt – samt Uhrzeit und dem Elternteil, das entschieden hat. | <img src="docs/bilder/08-benachrichtigungen.png" width="380"><br>**Benachrichtigungen einschalten.** Pro Gerät ein Tipp. Danach meldet sich das Handy, sobald eine Aufgabe bestätigt ist oder es etwas Neues zu tun gibt – auch bei geschlossener Seite. |
 
 ### Für die Eltern
@@ -53,7 +53,7 @@ gehört ausdrücklich nicht zur Anwendung).
 | <img src="docs/bilder/09-eltern-wiedervorlage.png" width="380"><br>**Wiedervorlage.** Alles, was die Kinder gemeldet haben, wartet hier. Bestätigen schreibt den Betrag gut, Ablehnen nicht. Die Notiz ist freiwillig und landet im Verlauf des Kindes. | <img src="docs/bilder/10-eltern-konten.png" width="380"><br>**Konten im Monat.** Je Kind Guthaben, Verdientes, feste Ausgaben und Rest – dazu die Abkürzungen zu Auszahlung und Details. |
 | <img src="docs/bilder/11-eltern-bestaetigt.png" width="380"><br>**Nach dem Bestätigen.** Der Betrag ist gutgeschrieben. Hat das Kind noch keine Benachrichtigung an, bietet die Seite einmalig an, ihm per WhatsApp Bescheid zu geben – mit Betrag und neuem Guthaben im Text. | <img src="docs/bilder/12-eltern-aufgaben.png" width="380"><br>**Aufgaben verwalten.** Anlegen, bearbeiten, pausieren, sortieren. Eine Aufgabe mit Historie wird beim Löschen nur pausiert, damit alte Buchungen nachvollziehbar bleiben. |
 | <img src="docs/bilder/13-aufgabe-anlegen.png" width="380"><br>**Neue Aufgabe.** Name, Betrag, Symbol aus der Auswahl, freiwillige Beschreibung – und für wen sie gilt: für alle Kinder oder für ein bestimmtes. | <img src="docs/bilder/14-eltern-kind-detail.png" width="380"><br>**Detailseite eines Kindes.** Guthaben, offene Meldungen, Monatsübersicht und alle Buchungen an einer Stelle – dazu der WhatsApp-Knopf für eine Nachricht zwischendurch. |
-| <img src="docs/bilder/15-buchung.png" width="380"><br>**Buchung erfassen.** Auszahlung, Bonus, Abzug oder Korrektur. Beträge immer positiv eingeben – die Richtung ergibt sich aus der Art. Ein Haken erlaubt ausdrücklich, das Konto ins Minus zu buchen. | <img src="docs/bilder/16-familie.png" width="380"><br>**Familie.** Persönlicher Zugangslink zum Kopieren oder direkt per WhatsApp, PIN neu setzen, Handynummer, Symbol und Farbe – und wie viele Geräte gerade angemeldet sind. |
+| <img src="docs/bilder/15-buchung.png" width="380"><br>**Buchung erfassen.** Auszahlung, Bonus, Abzug oder Korrektur. Beträge immer positiv eingeben – die Richtung ergibt sich aus der Art, das Datum entscheidet über den Monat. Ein Haken erlaubt ausdrücklich, das Konto ins Minus zu buchen. Dasselbe Formular dient zum Bearbeiten. | <img src="docs/bilder/16-familie.png" width="380"><br>**Familie.** Persönlicher Zugangslink zum Kopieren oder direkt per WhatsApp, PIN neu setzen, Handynummer, Symbol und Farbe – und wie viele Geräte gerade angemeldet sind. |
 
 ### Auf dem Rechner ist mehr Platz
 
@@ -63,7 +63,7 @@ gehört ausdrücklich nicht zur Anwendung).
 
 <img src="docs/bilder/18-eltern-verlauf.png" width="900">
 
-**Verlauf.** Sämtliche Buchungen, filterbar nach Kind und Monat, mit den Summen des Zeitraums über der Tabelle.
+**Verlauf.** Sämtliche Buchungen, filterbar nach Kind und Monat, mit den Summen des Zeitraums über der Tabelle. Rechts an jeder Zeile: ✏️ bearbeiten und 🗑 löschen – auf dem Handy bleibt die Spalte beim seitlichen Scrollen stehen.
 
 <img src="docs/bilder/19-eltern-ausgaben.png" width="900">
 
@@ -97,7 +97,7 @@ die Start-PINs funktionieren also genau einmal.
 Wer keine PIN tippen mag, bekommt von den Eltern einen eigenen Link:
 
 ```
-https://kinderarbeit.example.de/?z=1d1a952f7a3c4e0b8f6d2a91c5e7b403
+https://eure-adresse.de/?z=1d1a952f7a3c4e0b8f6d2a91c5e7b403
 ```
 
 Die Eltern erzeugen ihn unter **Familie**, kopieren ihn mit einem Klick oder
@@ -105,8 +105,8 @@ schicken ihn direkt über WhatsApp. Wer den Link öffnet, ist sofort angemeldet
 und wird nicht nach der PIN gefragt; der Token verschwindet dabei aus der
 Adresszeile.
 
-**Der Link wird nur einmal gebraucht.** Danach genügt
-kinderarbeit.example.de – das Gerät bleibt angemeldet.
+**Der Link wird nur einmal gebraucht.** Danach genügt die blanke Adresse –
+das Gerät bleibt angemeldet.
 
 * Der Token ist 128 Bit lang und damit nicht zu erraten.
 * Ein Link gilt, bis er neu erzeugt oder zurückgezogen wird – er läuft nicht ab.
@@ -317,8 +317,8 @@ Dann `http://localhost:8080` im Browser öffnen.
 
 ## Veröffentlichen
 
-Ein Push auf den Hauptbranch veröffentlicht automatisch auf
-kinderarbeit.example.de – sobald die vier Secrets hinterlegt sind.
+Ein Push auf den Hauptbranch veröffentlicht automatisch auf die eingerichtete
+Subdomain – sobald die vier Secrets hinterlegt sind.
 Der Ablauf prüft erst die Logik, überträgt dann per `rsync` (die Datenbank
 bleibt dabei unangetastet) und schaut zum Schluss von außen nach, ob die
 Seite läuft und `data/` und `app/` abgeschottet sind.

@@ -1,4 +1,4 @@
-# Kinderarbeit – Veröffentlichen auf kinderarbeit.example.de
+# Kinderarbeit – Veröffentlichen auf die eigene Subdomain
 #
 # Läuft bei jedem Push auf den Hauptbranch und lässt sich unter "Actions"
 # auch von Hand starten. Solange die Secrets fehlen, wird nur geprüft und
@@ -12,6 +12,9 @@
 # Freiwillig:
 #   SSH_PORT          abweichender Port, Standard 22
 #   SSH_KNOWN_HOSTS   Serverschlüssel – siehe docs/DEPLOY.md
+#   SITE_URL          Adresse der Seite, z. B. https://kinderarbeit.example.de/
+#                     Nur für die Prüfung von außen. Fehlt sie, entfällt die
+#                     Prüfung; die Adresse steht bewusst nicht im Repository.
 
 name: Veröffentlichen
 
@@ -29,7 +32,7 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  SITE_URL: https://kinderarbeit.example.de/
+  SITE_URL: ${{ secrets.SITE_URL }}
 
 jobs:
   pruefen:
@@ -294,11 +297,17 @@ jobs:
         run: |
           code() { curl -sS -o /dev/null -w '%{http_code}' --max-time 20 "$1" || echo "000"; }
 
+          if [ -z "$SITE_URL" ]; then
+            echo "::notice::Kein Secret SITE_URL hinterlegt – Prüfung von außen übersprungen."
+            exit 0
+          fi
+          SITE_URL="${SITE_URL%/}/"
+
           start=$(code "$SITE_URL")
           echo "Startseite: HTTP $start"
 
           if [ "$start" = "000" ]; then
-            echo "::warning::$SITE_URL ist nicht erreichbar – steht die Subdomain schon? Prüfung übersprungen."
+            echo "::warning::Die Startseite ist nicht erreichbar – steht die Subdomain schon? Prüfung übersprungen."
             exit 0
           fi
 

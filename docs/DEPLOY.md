@@ -1,6 +1,10 @@
 # Einrichtung auf dem Server
 
-Für **kinderarbeit.example.de** auf einem Webspace oder Server bei manitu.
+Für eine eigene Subdomain auf einem Webspace oder Server bei manitu.
+
+Die Adresse der Seite steht bewusst nirgends im Repository. Wo sie gebraucht
+wird, steht hier `<deine-subdomain>`, für die Kennung des Hosting-Pakets
+`<site-id>` – beides beim Abtippen durch die eigenen Werte ersetzen.
 
 Die Anwendung braucht nichts als PHP und SQLite: kein Composer, kein Node,
 keinen Build-Schritt und keine MySQL-Datenbank. Hochladen genügt.
@@ -27,7 +31,7 @@ php -m | grep -i sqlite      # muss pdo_sqlite ausgeben
 
 ## 2. Subdomain anlegen
 
-Im manitu-Kundenbereich die Subdomain `kinderarbeit.example.de` anlegen
+Im manitu-Kundenbereich die gewünschte Subdomain anlegen
 und auf ein eigenes Verzeichnis zeigen lassen, zum Beispiel:
 
 ```
@@ -42,7 +46,7 @@ Sicherheitswarnung statt der Anwendung.
 So lässt sich prüfen, ob das Zertifikat schon passt:
 
 ```bash
-curl -sI https://kinderarbeit.example.de/ | head -1
+curl -sI https://<deine-subdomain>/ | head -1
 ```
 
 Kommt stattdessen „SSL: no alternative certificate subject name matches“, ist
@@ -176,14 +180,15 @@ New repository secret**. Vier Stück sind nötig:
 | `SSH_HOST` | Servername aus dem manitu-Kundenbereich, z. B. `ssh.manitu.de` |
 | `SSH_USER` | Benutzername beim Hoster |
 | `SSH_KEY` | der **gesamte** Inhalt von `~/.ssh/kinderarbeit_deploy` – mit den Zeilen `-----BEGIN …` und `-----END …` |
-| `DEPLOY_PATH` | Verzeichnis **genau dieser Subdomain**, bei manitu z. B. `/home/sites/site000000000/web/kinderarbeit.example.de` |
+| `DEPLOY_PATH` | Verzeichnis **genau dieser Subdomain**, bei manitu z. B. `/home/sites/<site-id>/web/<deine-subdomain>` |
 
-Zwei weitere sind freiwillig:
+Drei weitere sind freiwillig:
 
 | Name | Wofür |
 |---|---|
 | `SSH_PORT` | nur falls der Server nicht auf Port 22 hört |
 | `SSH_KNOWN_HOSTS` | Serverschlüssel – **erforderlich**, siehe Schritt 5 |
+| `SITE_URL` | Adresse der Seite, z. B. `https://kinderarbeit.example.de/`. Nur für die Prüfung von außen am Ende des Ablaufs; fehlt sie, entfällt dieser Schritt. Als Secret und nicht im Repository, damit die Adresse nicht öffentlich steht. |
 
 Den privaten Schlüssel bekommst du so in die Zwischenablage:
 
@@ -206,7 +211,7 @@ Get-Content "$HOME\.ssh\kinderarbeit_deploy" -Raw | Set-Clipboard   # Windows
 > So findest du den richtigen Pfad auf dem Server:
 >
 > ```bash
-> grep -rl "kinderarbeit.example.de" ~/../.. --include="index.html" 2>/dev/null
+> grep -rl "<deine-subdomain>" ~/../.. --include="index.html" 2>/dev/null
 > ```
 
 **4. Veröffentlichen**
@@ -276,7 +281,7 @@ Die Datenbank legt sich beim ersten Aufruf selbst an.
 
 ## 5. Erster Aufruf
 
-`https://kinderarbeit.example.de` öffnen. Es erscheint die Profilauswahl
+Die eigene Adresse im Browser öffnen. Es erscheint die Profilauswahl
 mit Emilius, Julius, Bruno, Birgitta und Thies.
 
 Start-PINs – gelten nur für die erste Anmeldung, danach fragt die Anwendung
@@ -315,9 +320,9 @@ php bin/zugangslink.php Emilius     # neuen Link erzeugen
 Diese Adressen müssen einen Fehler liefern (404 oder 403), keine Inhalte:
 
 ```bash
-curl -sI https://kinderarbeit.example.de/data/kinderarbeit.sqlite | head -1
-curl -sI https://kinderarbeit.example.de/app/Database.php          | head -1
-curl -sI https://kinderarbeit.example.de/data/                     | head -1
+curl -sI https://<deine-subdomain>/data/kinderarbeit.sqlite | head -1
+curl -sI https://<deine-subdomain>/app/Database.php          | head -1
+curl -sI https://<deine-subdomain>/data/                     | head -1
 ```
 
 Falls dort etwas ausgeliefert wird, greift die `.htaccess` nicht – dann prüfen,
@@ -336,7 +341,7 @@ Kundenbereich das Feature **Cronjob**. Dort eintragen:
 
 | Feld | Wert |
 |---|---|
-| Befehl | `/usr/bin/php /home/sites/site000000000/web/kinderarbeit.example.de/bin/cron.php` |
+| Befehl | `/usr/bin/php /home/sites/<site-id>/web/<deine-subdomain>/bin/cron.php` |
 | Zeitpunkt | täglich, z. B. 6 Uhr |
 
 ---
@@ -357,7 +362,7 @@ Für eine tägliche Sicherung ebenfalls das Feature **Cronjob** im Kundenbereich
 nutzen, nicht `crontab`:
 
 ```
-/usr/bin/sqlite3 /home/sites/site000000000/web/kinderarbeit.example.de/data/kinderarbeit.sqlite ".backup '/home/sites/site000000000/sicherungen/kinderarbeit.sqlite'"
+/usr/bin/sqlite3 /home/sites/<site-id>/web/<deine-subdomain>/data/kinderarbeit.sqlite ".backup '/home/sites/<site-id>/sicherungen/kinderarbeit.sqlite'"
 ```
 
 Das Zielverzeichnis vorher anlegen, und zwar **außerhalb** von `web/` – sonst

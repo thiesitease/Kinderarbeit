@@ -19,8 +19,13 @@ defined('KINDERARBEIT') || exit;
  */
 final class Push
 {
-    /** Kennung des Absenders fuer den Push-Dienst, falls noch keine gespeichert ist. */
-    private const SUBJECT_FALLBACK = 'https://kinderarbeit.example.de/';
+    /**
+     * Kennung des Absenders fuer den Push-Dienst, wenn die eigene Adresse
+     * nicht zu ermitteln ist. Sie dient nur der Rueckfrage durch den Dienst
+     * und wird nirgends aufgerufen – deshalb eine neutrale Kennung statt der
+     * echten Adresse, die nicht ins Repository gehoert.
+     */
+    private const SUBJECT_FALLBACK = 'https://kinderarbeit.invalid/';
 
     // ------------------------------------------------------------ Schluessel
 
@@ -71,10 +76,14 @@ final class Push
     /** Absenderkennung: die Adresse der Anwendung, solange keine andere gespeichert ist. */
     private static function subject(): string
     {
-        if (PHP_SAPI === 'cli' || empty($_SERVER['HTTP_HOST'])) {
-            return self::SUBJECT_FALLBACK;
+        if (PHP_SAPI !== 'cli' && !empty($_SERVER['HTTP_HOST'])) {
+            return base_url();
         }
-        return base_url();
+
+        // Auf der Kommandozeile gibt es keinen Hostnamen. Wer von dort aus
+        // pushen will, setzt KINDERARBEIT_URL.
+        $eigene = trim((string)getenv('KINDERARBEIT_URL'));
+        return $eigene !== '' ? rtrim($eigene, '/') . '/' : self::SUBJECT_FALLBACK;
     }
 
     // ----------------------------------------------------------- Abonnements
