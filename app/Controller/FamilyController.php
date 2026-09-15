@@ -85,7 +85,27 @@ final class FamilyController
                     TaskController::sanitizeEmoji(param('emoji'), '🙂'),
                     preg_match('/^#[0-9a-fA-F]{6}$/', param('color')) ? param('color') : (string)$user['color']
                 );
-                Flash::success('Das Profil von ' . $user['name'] . ' wurde aktualisiert.');
+
+                // Leeres Feld bedeutet: Nummer entfernen.
+                $eingabe = param('phone');
+                if ($eingabe === '') {
+                    Users::setPhone($id, null);
+                    Flash::success('Das Profil von ' . $user['name'] . ' wurde aktualisiert.');
+                    break;
+                }
+
+                $fehler = null;
+                $nummer = Phone::normalize($eingabe, $fehler);
+                if ($nummer === null) {
+                    Flash::error('Handynummer von ' . $user['name'] . ': ' . $fehler);
+                    break;
+                }
+
+                Users::setPhone($id, $nummer);
+                Flash::success(
+                    'Das Profil von ' . $user['name'] . ' wurde aktualisiert. '
+                    . 'Handynummer: ' . Phone::format($nummer)
+                );
                 break;
         }
 

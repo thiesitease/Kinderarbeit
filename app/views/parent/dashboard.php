@@ -9,6 +9,30 @@ defined('KINDERARBEIT') || exit;
 $pendingTotal = array_sum(array_map(static fn (array $p): int => (int)$p['amount_cents'], $pending));
 ?>
 
+<?php if (!empty($bescheid)): ?>
+  <?php
+  $kind    = $bescheid['child'];
+  $text    = 'Hallo ' . $kind['name'] . '! Ich habe „' . $bescheid['title'] . '“ bestätigt, '
+           . Money::format($bescheid['amount']) . ' sind auf deinem Konto. '
+           . 'Dein Guthaben: ' . Money::format($bescheid['balance']) . '. ' . base_url();
+  $link    = Phone::waLink($kind['phone'], $text);
+  ?>
+  <div class="card card--accent mb-2" style="--accent: <?= e($kind['color']) ?>">
+    <div class="row row--nowrap">
+      <span class="avatar avatar--lg" aria-hidden="true"><?= e($kind['emoji']) ?></span>
+      <div>
+        <div style="font-weight:650"><?= e($kind['name']) ?> Bescheid geben?</div>
+        <div class="small muted">
+          „<?= e($bescheid['title']) ?>“ ist bestätigt – <?= e($kind['name']) ?> weiß es noch nicht.
+        </div>
+      </div>
+      <a class="btn btn--whatsapp push-right" target="_blank" rel="noopener" href="<?= e($link) ?>">
+        <span aria-hidden="true">💬</span> Per WhatsApp
+      </a>
+    </div>
+  </div>
+<?php endif; ?>
+
 <?php if ($defaultPinUsers): ?>
   <div class="notice mb-2">
     <span aria-hidden="true">🔐</span>

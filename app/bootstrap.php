@@ -32,6 +32,7 @@ ini_set('error_log', DATA_DIR . '/php-error.log');
 
 require APP_DIR . '/helpers.php';
 require APP_DIR . '/Money.php';
+require APP_DIR . '/Phone.php';
 require APP_DIR . '/Database.php';
 require APP_DIR . '/Csrf.php';
 require APP_DIR . '/Auth.php';

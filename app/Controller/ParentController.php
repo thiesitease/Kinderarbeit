@@ -32,8 +32,26 @@ final class ParentController
             ];
         }
 
+        // Einmalig nach einer Bestätigung: Angebot, dem Kind Bescheid zu geben.
+        $hinweis = $_SESSION['notify_child'] ?? null;
+        unset($_SESSION['notify_child']);
+
+        $bescheid = null;
+        if ($hinweis) {
+            $kind = Users::find((int)$hinweis['child_id']);
+            if ($kind && !empty($kind['phone'])) {
+                $bescheid = [
+                    'child'   => $kind,
+                    'title'   => $hinweis['title'],
+                    'amount'  => (int)$hinweis['amount'],
+                    'balance' => Ledger::balance((int)$kind['id']),
+                ];
+            }
+        }
+
         View::page('parent/dashboard', [
             'title'          => 'Übersicht',
+            'bescheid'       => $bescheid,
             'pending'        => Completions::pending(),
             'overview'       => $overview,
             'month'          => $month,
@@ -72,6 +90,13 @@ final class ParentController
                         'Bestätigt: ' . Money::format((int)$completion['amount_cents'])
                         . ' für ' . $completion['child_name'] . ' gutgeschrieben.'
                     );
+                    // Damit die nächste Seite anbieten kann, dem Kind
+                    // per WhatsApp Bescheid zu geben.
+                    $_SESSION['notify_child'] = [
+                        'child_id' => (int)$completion['child_id'],
+                        'title'    => (string)$completion['title'],
+                        'amount'   => (int)$completion['amount_cents'],
+                    ];
                 } else {
                     Flash::info('Diese Meldung wurde bereits bearbeitet.');
                 }

@@ -30,7 +30,7 @@ mb_internal_encoding('UTF-8');
 error_reporting(E_ALL);
 ini_set('display_errors', '1');
 
-foreach (['helpers', 'Money', 'Database', 'Billing', 'Repo/Users', 'Repo/Tasks', 'Repo/Completions', 'Repo/Ledger', 'Repo/Expenses'] as $file) {
+foreach (['helpers', 'Money', 'Phone', 'Database', 'Billing', 'Repo/Users', 'Repo/Tasks', 'Repo/Completions', 'Repo/Ledger', 'Repo/Expenses'] as $file) {
     require APP_DIR . '/' . $file . '.php';
 }
 
@@ -175,6 +175,42 @@ $titles = array_column(Tasks::forChild($childId), 'title');
 check('Emilius sieht fremde Aufgabe nicht', in_array('Auto waschen', $titles, true), false);
 $titles = array_column(Tasks::forChild((int)$julius['id']), 'title');
 check('Julius sieht seine Aufgabe',   in_array('Auto waschen', $titles, true), true);
+
+echo "\nHandynummern\n";
+check('"0171 1234567"',              Phone::normalize('0171 1234567'), '491711234567');
+check('"+49 171 1234567"',           Phone::normalize('+49 171 1234567'), '491711234567');
+check('"0049 171 1234567"',          Phone::normalize('0049 171 1234567'), '491711234567');
+check('"+49-171-123 45 67"',         Phone::normalize('+49-171-123 45 67'), '491711234567');
+check('"(0171) 1234567"',            Phone::normalize('(0171) 1234567'), '491711234567');
+check('"491711234567"',              Phone::normalize('491711234567'), '491711234567');
+check('Oesterreich "+43 664 1234567"', Phone::normalize('+43 664 1234567'), '436641234567');
+check('Leereingabe',                 Phone::normalize(''), null);
+check('Nur Buchstaben',              Phone::normalize('keine Nummer'), null);
+check('Zu kurz',                     Phone::normalize('0171 12'), null);
+check('Zu lang',                     Phone::normalize('+49 171 123456789012345'), null);
+
+check('Anzeige deutsch',             Phone::format('491711234567'), '+49 171 1234567');
+check('Anzeige ausländisch',         Phone::format('436641234567'), '+436641234567');
+check('Anzeige ohne Nummer',         Phone::format(null), '');
+
+check('Link enthaelt die Nummer',
+      str_starts_with((string)Phone::waLink('491711234567', 'Hallo'), 'https://wa.me/491711234567?text='), true);
+check('Text wird kodiert',
+      str_contains((string)Phone::waLink('491711234567', 'Hallo Welt & mehr'), 'Hallo%20Welt%20%26%20mehr'), true);
+check('Ohne Nummer kein Link',       Phone::waLink(null, 'Hallo'), null);
+
+$emiliusId = (int)Users::findByName('Emilius')['id'];
+check('Zu Beginn keine Nummer',      Users::find($emiliusId)['phone'], null);
+Users::setPhone($emiliusId, '491711234567');
+check('Nummer gespeichert',          Users::find($emiliusId)['phone'], '491711234567');
+check('Noch kein Elternteil erreichbar', count(Users::parentsWithPhone()), 0);
+Users::setPhone((int)Users::findByName('Thies')['id'], '491715550000');
+check('Ein Elternteil erreichbar',   count(Users::parentsWithPhone()), 1);
+Users::setPhone($emiliusId, null);
+check('Nummer wieder entfernt',      Users::find($emiliusId)['phone'], null);
+
+check('Spalte phone vorhanden',
+      in_array('phone', $pdo->query('PRAGMA table_info(users)')->fetchAll(PDO::FETCH_COLUMN, 1), true), true);
 
 echo "\nZugangslinks\n";
 check('Zu Beginn kein Link',          $emilius['access_token'], null);

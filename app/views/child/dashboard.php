@@ -100,6 +100,35 @@ $rest = $summary['net'];
         <?php endforeach; ?>
       </ul>
     </div>
+
+    <?php if (!empty($reachableParents)): ?>
+      <?php
+      $titel = array_map(static fn (array $i): string => $i['title'], $pending);
+      $liste = count($titel) === 1
+          ? $titel[0]
+          : implode(', ', array_slice($titel, 0, -1)) . ' und ' . end($titel);
+      ?>
+      <div class="card mt-2">
+        <div class="row">
+          <div>
+            <strong class="small">Bescheid sagen</strong>
+            <div class="small muted">Öffnet WhatsApp mit fertigem Text – abgeschickt wird von dir.</div>
+          </div>
+          <span class="btn-row push-right">
+            <?php foreach ($reachableParents as $elternteil): ?>
+              <?php
+              $text = 'Hallo ' . $elternteil['name'] . '! Ich habe ' . $liste . ' erledigt ('
+                    . Money::format($pendingAmount) . '). Kannst du es bestätigen? ' . base_url();
+              ?>
+              <a class="btn btn--whatsapp btn--sm" target="_blank" rel="noopener"
+                 href="<?= e(Phone::waLink($elternteil['phone'], $text)) ?>">
+                <span aria-hidden="true"><?= e($elternteil['emoji']) ?></span> <?= e($elternteil['name']) ?>
+              </a>
+            <?php endforeach; ?>
+          </span>
+        </div>
+      </div>
+    <?php endif; ?>
   </section>
 <?php endif; ?>
 

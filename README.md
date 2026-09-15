@@ -64,6 +64,22 @@ Adresszeile.
 Solange jemand ausschließlich den Link nutzt, bleibt die Start-PIN gültig.
 Deshalb lohnt es sich, unter **Familie** trotzdem einmal eine eigene PIN zu setzen.
 
+## WhatsApp
+
+Ist im Profil eine Handynummer hinterlegt (unter **Familie**), erscheinen an drei
+Stellen Knöpfe, die WhatsApp mit fertigem Text öffnen:
+
+* Ein Kind sieht unter seinen offenen Meldungen „Bescheid sagen" je Elternteil –
+  der Text nennt alle wartenden Aufgaben und die Summe
+* Direkt nach dem Bestätigen fragt die Elternübersicht einmalig, ob das Kind
+  Bescheid bekommen soll – mit Betrag und neuem Guthaben im Text
+* Auf der Detailseite eines Kindes steht ein Knopf für eine Nachricht zwischendurch
+
+**Verschickt wird nichts von allein.** Die Knöpfe öffnen WhatsApp mit vorbereitetem
+Text; abgeschickt wird von Hand. Automatisch versendet nur die
+WhatsApp-Business-API, und die verlangt ein verifiziertes Unternehmenskonto, eine
+eigene Rufnummer und genehmigte Textvorlagen – für eine Familie unverhältnismäßig.
+
 ## Wie das Geld gerechnet wird
 
 Jedes Kind hat ein Buchungsjournal. Positive Beträge sind Gutschriften,

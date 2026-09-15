@@ -26,6 +26,7 @@ final class ChildController
             'expenses'       => Expenses::all($childId, true),
             'month'          => $month,
             'daysLeft'       => days_left_in_month(),
+            'reachableParents' => Users::parentsWithPhone(),
         ]);
     }
 

@@ -30,6 +30,14 @@ $activeExpenses = array_filter($expenses, static fn (array $ex): bool => (int)$e
         : 'noch nie angemeldet' ?></span>
   </div>
   <div class="btn-row mt-2">
+    <?php if (!empty($child['phone'])): ?>
+      <?php
+      $text = 'Hallo ' . $child['name'] . '! Dein Guthaben bei Kinderarbeit: '
+            . Money::format($balance) . '. ' . base_url();
+      ?>
+      <a class="btn btn--whatsapp btn--sm" target="_blank" rel="noopener"
+         href="<?= e(Phone::waLink($child['phone'], $text)) ?>">💬 WhatsApp</a>
+    <?php endif; ?>
     <a class="btn btn--sm" href="<?= e(url('buchung', ['kind' => $childId, 'art' => 'payout'])) ?>">💶 Auszahlen</a>
     <a class="btn btn--sm" href="<?= e(url('buchung', ['kind' => $childId, 'art' => 'bonus'])) ?>">🎁 Bonus</a>
     <a class="btn btn--sm" href="<?= e(url('ausgabe-form', ['kind' => $childId])) ?>">💳 Feste Ausgabe</a>
