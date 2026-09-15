@@ -17,11 +17,12 @@ final class FamilyController
         unset($_SESSION['highlight_link']);
 
         View::page('parent/family', [
-            'title'     => 'Familie',
-            'users'     => Users::all(),
-            'colors'    => self::COLORS,
-            'emojis'    => self::EMOJIS,
-            'highlight' => $highlight,
+            'title'       => 'Familie',
+            'users'       => Users::all(),
+            'colors'      => self::COLORS,
+            'emojis'      => self::EMOJIS,
+            'highlight'   => $highlight,
+            'pushDevices' => Push::deviceCounts(),
         ]);
     }
 
@@ -77,6 +78,15 @@ final class FamilyController
             case 'clear-link':
                 Users::clearToken($id);
                 Flash::info('Der Zugangslink von ' . $user['name'] . ' wurde zurückgezogen.');
+                break;
+
+            case 'push-loeschen':
+                $anzahl = Push::removeAll($id);
+                Flash::info(
+                    $anzahl === 1
+                        ? 'Ein Gerät von ' . $user['name'] . ' bekommt keine Benachrichtigungen mehr.'
+                        : $anzahl . ' Geräte von ' . $user['name'] . ' bekommen keine Benachrichtigungen mehr.'
+                );
                 break;
 
             case 'profile':

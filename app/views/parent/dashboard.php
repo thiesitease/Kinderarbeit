@@ -173,3 +173,5 @@ $pendingTotal = array_sum(array_map(static fn (array $p): int => (int)$p['amount
     </div>
   </section>
 <?php endif; ?>
+
+<?= View::render('partials/push-toggle') ?>

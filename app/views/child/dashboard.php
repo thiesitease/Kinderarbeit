@@ -184,3 +184,5 @@ $rest = $summary['net'];
     <p class="mt-2"><a class="btn btn--block" href="<?= e(url('kind-konto')) ?>">Mein Konto ansehen</a></p>
   </div>
 </section>
+
+<?= View::render('partials/push-toggle') ?>

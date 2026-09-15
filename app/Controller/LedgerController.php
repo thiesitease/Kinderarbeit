@@ -68,10 +68,22 @@ final class LedgerController
             (int)$me['id']
         );
 
+        $neuerStand = Ledger::balance($childId);
+
         Flash::success(
             Money::format($signedAmount, true) . ' für ' . $child['name'] . ' gebucht. '
-            . 'Neuer Kontostand: ' . Money::format(Ledger::balance($childId)) . '.'
+            . 'Neuer Kontostand: ' . Money::format($neuerStand) . '.'
         );
+
+        Push::toUser($childId, [
+            'title' => ($signedAmount >= 0 ? '💰 ' : '💸 ')
+                     . ($note !== '' ? mb_substr($note, 0, 60) : $defaultText),
+            'body'  => Money::format($signedAmount, true)
+                     . ' · neuer Kontostand: ' . Money::format($neuerStand) . '.',
+            'url'   => url('kind-konto'),
+            'tag'   => 'buchung',
+        ]);
+
         redirect('kind-detail', ['id' => $childId]);
     }
 

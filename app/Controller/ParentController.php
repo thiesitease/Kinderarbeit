@@ -37,7 +37,7 @@ final class ParentController
         unset($_SESSION['notify_child']);
 
         $bescheid = null;
-        if ($hinweis) {
+        if ($hinweis && empty($hinweis['pushed'])) {
             $kind = Users::find((int)$hinweis['child_id']);
             if ($kind && !empty($kind['phone'])) {
                 $bescheid = [
@@ -90,12 +90,26 @@ final class ParentController
                         'Bestätigt: ' . Money::format((int)$completion['amount_cents'])
                         . ' für ' . $completion['child_name'] . ' gutgeschrieben.'
                     );
-                    // Damit die nächste Seite anbieten kann, dem Kind
-                    // per WhatsApp Bescheid zu geben.
+
+                    $kindId  = (int)$completion['child_id'];
+                    $guthaben = Ledger::balance($kindId);
+
+                    $benachrichtigt = Push::toUser($kindId, [
+                        'title' => '✅ Bestätigt: ' . $completion['title'],
+                        'body'  => Money::format((int)$completion['amount_cents'])
+                                 . ' sind auf deinem Konto. Guthaben: ' . Money::format($guthaben) . '.',
+                        'url'   => url('kind-konto'),
+                        'tag'   => 'bestaetigt-' . $id,
+                    ]);
+
+                    // Damit die nächste Seite anbieten kann, dem Kind per
+                    // WhatsApp Bescheid zu geben – aber nur, wenn die
+                    // Benachrichtigung nicht schon angekommen ist.
                     $_SESSION['notify_child'] = [
-                        'child_id' => (int)$completion['child_id'],
+                        'child_id' => $kindId,
                         'title'    => (string)$completion['title'],
                         'amount'   => (int)$completion['amount_cents'],
+                        'pushed'   => $benachrichtigt > 0,
                     ];
                 } else {
                     Flash::info('Diese Meldung wurde bereits bearbeitet.');
@@ -105,6 +119,13 @@ final class ParentController
             case 'reject':
                 if (Completions::reject($id, (int)$me['id'], $note)) {
                     Flash::info('Abgelehnt – es wurde nichts gutgeschrieben.');
+
+                    Push::toUser((int)$completion['child_id'], [
+                        'title' => '❌ Noch nicht bestätigt: ' . $completion['title'],
+                        'body'  => $note !== '' ? $note : 'Frag Mama oder Papa, woran es liegt.',
+                        'url'   => url('kind-verlauf'),
+                        'tag'   => 'abgelehnt-' . $id,
+                    ]);
                 } else {
                     Flash::info('Diese Meldung wurde bereits bearbeitet.');
                 }
@@ -116,6 +137,15 @@ final class ParentController
                         'Bestätigung zurückgenommen – '
                         . Money::format((int)$completion['amount_cents']) . ' wurden wieder abgezogen.'
                     );
+
+                    Push::toUser((int)$completion['child_id'], [
+                        'title' => '↩️ Zurückgenommen: ' . $completion['title'],
+                        'body'  => Money::format((int)$completion['amount_cents'])
+                                 . ' wurden wieder abgezogen. Guthaben: '
+                                 . Money::format(Ledger::balance((int)$completion['child_id'])) . '.',
+                        'url'   => url('kind-konto'),
+                        'tag'   => 'zurueck-' . $id,
+                    ]);
                 } else {
                     Flash::error('Diese Bestätigung lässt sich nicht mehr zurücknehmen.');
                 }

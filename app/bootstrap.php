@@ -38,12 +38,14 @@ require APP_DIR . '/Csrf.php';
 require APP_DIR . '/Auth.php';
 require APP_DIR . '/Flash.php';
 require APP_DIR . '/Billing.php';
+require APP_DIR . '/WebPush.php';
 require APP_DIR . '/View.php';
 require APP_DIR . '/Repo/Users.php';
 require APP_DIR . '/Repo/Tasks.php';
 require APP_DIR . '/Repo/Completions.php';
 require APP_DIR . '/Repo/Ledger.php';
 require APP_DIR . '/Repo/Expenses.php';
+require APP_DIR . '/Repo/Push.php';
 
 /** Session sicher starten (Cookie nur via HTTP, SameSite=Lax, Secure wenn HTTPS). */
 function app_start_session(): void

@@ -1,5 +1,5 @@
 <?php
-/** @var array $users, $colors, $emojis, $me */
+/** @var array $users, $colors, $emojis, $me, $pushDevices */
 defined('KINDERARBEIT') || exit;
 ?>
 
@@ -57,7 +57,22 @@ defined('KINDERARBEIT') || exit;
         <?php elseif ((int)$user['failed_logins'] > 0): ?>
           <span class="pill"><?= (int)$user['failed_logins'] ?> Fehlversuch<?= (int)$user['failed_logins'] === 1 ? '' : 'e' ?></span>
         <?php endif; ?>
+        <?php $geraete = $pushDevices[$userId] ?? 0; ?>
+        <?php if ($geraete > 0): ?>
+          <span class="pill pill--positive">🔔 <?= $geraete ?> Gerät<?= $geraete === 1 ? '' : 'e' ?></span>
+        <?php endif; ?>
       </div>
+
+      <?php if ($geraete > 0): ?>
+        <form method="post" action="<?= e(url('familie-aktion')) ?>" class="mt-2"
+              data-confirm="Alle Geräte von <?= e($user['name']) ?> abmelden? Benachrichtigungen lassen sich dort jederzeit wieder einschalten.">
+          <?= Csrf::field() ?>
+          <input type="hidden" name="id" value="<?= $userId ?>">
+          <button class="btn btn--ghost btn--sm" type="submit" name="action" value="push-loeschen">
+            Benachrichtigungen abmelden
+          </button>
+        </form>
+      <?php endif; ?>
 
       <?php if ($isLocked): ?>
         <form method="post" action="<?= e(url('familie-aktion')) ?>" class="mt-2">
@@ -206,6 +221,7 @@ defined('KINDERARBEIT') || exit;
       <li>Gelöschte Aufgaben mit Historie werden nur pausiert, damit alte Buchungen nachvollziehbar bleiben.</li>
       <li>Ein Zugangslink gilt, bis ihr ihn neu erzeugt oder zurückzieht – er läuft nicht von selbst ab.</li>
       <li>Die WhatsApp-Knöpfe verschicken nichts von allein: sie öffnen WhatsApp mit fertigem Text, abgeschickt wird von Hand.</li>
+      <li>Benachrichtigungen werden auf jedem Gerät einzeln eingeschaltet – unten auf der eigenen Startseite. Hier steht nur, wie viele Geräte angemeldet sind.</li>
       <li>Solange jemand nur über den Link hereinkommt, bleibt seine Start-PIN gültig. Setzt sie deshalb am besten trotzdem einmal neu.</li>
     </ul>
   </div>

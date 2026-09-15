@@ -21,7 +21,8 @@ vollständige Historie und der Restbetrag pro Monat.
 | Kinder | Eltern | Konten im Vergleich, Detailseite je Kind |
 | Ausgaben | Eltern | regelmäßige monatliche Ausgaben je Kind |
 | Verlauf | Eltern | alle Buchungen, filterbar nach Kind und Monat |
-| Familie | Eltern | Zugangslinks, PINs, Sperren, Symbole und Farben |
+| Familie | Eltern | Zugangslinks, PINs, Sperren, Symbole, Farben und angemeldete Geräte |
+| Benachrichtigungen | alle | pro Gerät ein- und ausschaltbar, direkt auf der Startseite |
 
 ## Die Familie
 
@@ -80,6 +81,39 @@ Text; abgeschickt wird von Hand. Automatisch versendet nur die
 WhatsApp-Business-API, und die verlangt ein verifiziertes Unternehmenskonto, eine
 eigene Rufnummer und genehmigte Textvorlagen – für eine Familie unverhältnismäßig.
 
+## Benachrichtigungen
+
+Wer eingeschaltet hat, bekommt eine Meldung auf Handy oder Rechner – auch wenn
+die Seite geschlossen ist:
+
+| Anlass | geht an |
+|---|---|
+| Kind meldet eine Aufgabe als erledigt | beide Eltern |
+| Eltern bestätigen | das Kind, mit Betrag und neuem Guthaben |
+| Eltern lehnen ab oder nehmen zurück | das Kind |
+| Eltern legen eine neue Aufgabe an | alle Kinder, bei Zuweisung nur dieses |
+| Eltern buchen von Hand (Bonus, Auszahlung, Korrektur) | das Kind |
+
+Eingeschaltet wird auf der eigenen Startseite, **auf jedem Gerät einzeln** –
+das Handy weiß nichts vom Rechner. Unter **Familie** sehen die Eltern, wer wie
+viele Geräte angemeldet hat, und können sie abmelden.
+
+Kommt die Benachrichtigung nach dem Bestätigen beim Kind an, entfällt das
+WhatsApp-Angebot auf der Elternübersicht – zweimal dasselbe braucht niemand.
+
+**Auf dem iPhone** gibt es Benachrichtigungen nur, wenn die Seite über „Teilen →
+Zum Home-Bildschirm" als App gespeichert ist. Die Anwendung weist darauf hin,
+wenn sie erkennt, dass genau das fehlt.
+
+Technisch ist das Web-Push nach RFC 8291 und RFC 8292, selbst geschrieben in
+`app/WebPush.php` – das Hosting hat keinen Composer, und PHP bringt mit openssl
+und `hash_hkdf` alles Nötige mit. Die Verschlüsselung ist gegen den Testvektor
+aus RFC 8291 geprüft; der Test steht in `bin/selftest.php`. Verschickt wird
+mitten im Seitenaufruf und parallel an alle Geräte, weil das Hosting keine
+Hintergrundprozesse erlaubt. Scheitert eine Zustellung, wird sie geloggt – eine
+Bestätigung scheitert daran nie. Meldet der Push-Dienst 404 oder 410, ist das
+Abonnement endgültig weg und wird gelöscht.
+
 ## Wie das Geld gerechnet wird
 
 Jedes Kind hat ein Buchungsjournal. Positive Beträge sind Gutschriften,
@@ -118,9 +152,11 @@ untersagt (siehe [docs/DEPLOY.md](docs/DEPLOY.md)).
 * helles und dunkles Design, für das Handy gebaut
 * CSRF-Schutz an allen Formularen, PIN-Sperre nach fünf Fehlversuchen
 * Zugangslinks mit 128-Bit-Token, jederzeit erneuerbar und zurückziehbar
+* Web-Push ohne fremde Bibliothek (RFC 8291/8292), gegen den Testvektor geprüft
 
 ```
 index.php              Einstiegspunkt und Routing
+sw.js                  Service Worker (nur für Benachrichtigungen)
 app/                   Anwendungscode (nicht öffentlich erreichbar)
   Controller/          eine Datei je Bereich
   Repo/                Datenbankzugriff
