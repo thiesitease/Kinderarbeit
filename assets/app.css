@@ -547,12 +547,12 @@ a:hover { color: color-mix(in srgb, var(--accent-ink) 75%, var(--text)); }
 .push { border-style: dashed; }
 .push__icon { font-size: 1.5rem; line-height: 1; flex: none; }
 .push__title { font-weight: 650; }
-/* Der Text darf schmaler werden, der Knopf nicht – sonst steht auf dem Handy
-   "inschalte" darauf. Die Grundbreite ist so gewaehlt, dass der Knopf auf dem
-   Handy in die naechste Zeile rutscht, statt den Text umbrechen zu lassen;
-   auf breiten Schirmen steht beides nebeneinander. */
-.push__text { flex: 1 1 16rem; min-width: 0; }
-.push .btn { flex: none; }
+/* Zeile aus Symbol, Text und Knopf: Der Text darf schmaler werden, der Knopf
+   nicht – sonst steht auf dem Handy "inschalte" darauf. Die Grundbreite ist so
+   gewaehlt, dass der Knopf auf dem Handy in die naechste Zeile rutscht, statt
+   den Text umbrechen zu lassen; auf breiten Schirmen steht beides nebeneinander. */
+.row__text { flex: 1 1 16rem; min-width: 0; }
+.row__text ~ .btn { flex: none; }
 
 /* --- Tabellen --------------------------------------------------------------- */
 

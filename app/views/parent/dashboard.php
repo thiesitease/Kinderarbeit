@@ -18,9 +18,9 @@ $pendingTotal = array_sum(array_map(static fn (array $p): int => (int)$p['amount
   $link    = Phone::waLink($kind['phone'], $text);
   ?>
   <div class="card card--accent mb-2" style="--accent: <?= e($kind['color']) ?>">
-    <div class="row row--nowrap">
+    <div class="row">
       <span class="avatar avatar--lg" aria-hidden="true"><?= e($kind['emoji']) ?></span>
-      <div>
+      <div class="row__text">
         <div style="font-weight:650"><?= e($kind['name']) ?> Bescheid geben?</div>
         <div class="small muted">
           „<?= e($bescheid['title']) ?>“ ist bestätigt – <?= e($kind['name']) ?> weiß es noch nicht.
