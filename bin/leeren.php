@@ -32,6 +32,19 @@ if ($modus !== null && !in_array($modus, ['verlauf', 'alles'], true)) {
 
 // ---------------------------------------------------------------- Bestand
 
+/**
+ * Auf eine Breite auffuellen - nach Zeichen, nicht nach Bytes.
+ *
+ * printf("%-20s") zaehlt Bytes. Jeder Umlaut belegt in UTF-8 zwei davon, und
+ * schon steht die Spalte daneben schief. mb_str_pad() gibt es erst ab PHP 8.3,
+ * auf dem Server laeuft 8.2.
+ */
+$spalte = static function (string $text, int $breite, bool $rechts = false): string {
+    $text = mb_substr($text, 0, $breite);
+    $luft = str_repeat(' ', max(0, $breite - mb_strlen($text)));
+    return $rechts ? $luft . $text : $text . $luft;
+};
+
 if (!file_exists(DB_FILE)) {
     echo "Es gibt noch keine Datenbank – beim nächsten Seitenaufruf entsteht sie neu.\n";
     exit(0);
@@ -55,14 +68,45 @@ $bestand = [
 echo "\nWas in der Datenbank steht\n";
 echo str_repeat('─', 52) . "\n";
 foreach ($bestand as $was => $wieviel) {
-    printf("  %-26s %6d\n", $was, $wieviel);
+    echo '  ' . $spalte($was, 26) . ' ' . $spalte((string)$wieviel, 6, true) . "\n";
 }
 
 echo "\nKontostände\n";
 echo str_repeat('─', 52) . "\n";
 foreach (Users::children() as $kind) {
-    printf("  %-26s %10s\n", $kind['name'], Money::format(Ledger::balance((int)$kind['id'])));
+    echo '  ' . $spalte((string)$kind['name'], 26) . ' '
+       . $spalte(Money::format(Ledger::balance((int)$kind['id'])), 10, true) . "\n";
 }
+
+// Aufgaben und feste Ausgaben beim Namen nennen. Eine blosse Anzahl beantwortet
+// die Frage nicht, die man hier meistens hat: Steht da noch etwas drin, das
+// niemand angelegt hat?
+$aufgaben = $pdo->query('SELECT title, amount_cents, is_active FROM tasks ORDER BY sort_order, id')->fetchAll();
+if ($aufgaben) {
+    echo "\nAufgaben\n";
+    echo str_repeat('─', 52) . "\n";
+    foreach ($aufgaben as $aufgabe) {
+        echo '  ' . $spalte((string)$aufgabe['title'], 26) . ' '
+           . $spalte(Money::format((int)$aufgabe['amount_cents']), 10, true)
+           . ((int)$aufgabe['is_active'] === 1 ? '' : '  (pausiert)') . "\n";
+    }
+}
+
+$posten = $pdo->query(
+    'SELECT e.title, e.amount_cents, u.name AS kind
+       FROM expenses e JOIN users u ON u.id = e.child_id
+      ORDER BY u.sort_order, e.id'
+)->fetchAll();
+if ($posten) {
+    echo "\nFeste Ausgaben\n";
+    echo str_repeat('─', 52) . "\n";
+    foreach ($posten as $eintrag) {
+        echo '  ' . $spalte((string)$eintrag['title'], 22) . ' '
+           . $spalte((string)$eintrag['kind'], 9) . ' '
+           . $spalte(Money::format(-(int)$eintrag['amount_cents']), 10, true) . "\n";
+    }
+}
+
 echo "\n";
 
 if ($modus === null) {
@@ -180,13 +224,14 @@ foreach ([DB_FILE, DB_FILE . '-wal', DB_FILE . '-shm'] as $datei) {
 echo "Gelöscht\n";
 echo str_repeat('─', 52) . "\n";
 foreach ($geloescht as $was => $wieviel) {
-    printf("  %-26s %6d\n", $was, $wieviel);
+    echo '  ' . $spalte($was, 26) . ' ' . $spalte((string)$wieviel, 6, true) . "\n";
 }
 
 echo "\nKontostände\n";
 echo str_repeat('─', 52) . "\n";
 foreach (Users::children() as $kind) {
-    printf("  %-26s %10s\n", $kind['name'], Money::format(Ledger::balance((int)$kind['id'])));
+    echo '  ' . $spalte((string)$kind['name'], 26) . ' '
+       . $spalte(Money::format(Ledger::balance((int)$kind['id'])), 10, true) . "\n";
 }
 echo "\nFeste Ausgaben starten ab " . month_label(month_shift(current_month(), 1)) . ".\n";
 echo "Aufgaben, Profile und Zugangslinks sind unberührt.\n\n";
