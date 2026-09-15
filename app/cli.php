@@ -26,7 +26,7 @@ error_reporting(E_ALL);
 ini_set('display_errors', '1');
 
 foreach ([
-    'helpers', 'Money', 'Phone', 'Database', 'Billing', 'WebPush',
+    'helpers', 'Money', 'Phone', 'Database', 'Billing', 'WebPush', 'Remember', 'Auth',
     'Repo/Users', 'Repo/Tasks', 'Repo/Completions', 'Repo/Ledger', 'Repo/Expenses', 'Repo/Push',
 ] as $file) {
     require APP_DIR . '/' . $file . '.php';

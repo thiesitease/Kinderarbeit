@@ -30,7 +30,7 @@ mb_internal_encoding('UTF-8');
 error_reporting(E_ALL);
 ini_set('display_errors', '1');
 
-foreach (['helpers', 'Money', 'Phone', 'Database', 'Billing', 'WebPush', 'Repo/Users', 'Repo/Tasks', 'Repo/Completions', 'Repo/Ledger', 'Repo/Expenses', 'Repo/Push'] as $file) {
+foreach (['helpers', 'Money', 'Phone', 'Database', 'Billing', 'WebPush', 'Remember', 'Auth', 'Repo/Users', 'Repo/Tasks', 'Repo/Completions', 'Repo/Ledger', 'Repo/Expenses', 'Repo/Push'] as $file) {
     require APP_DIR . '/' . $file . '.php';
 }
 
@@ -428,6 +428,132 @@ check('Bruno hat ein Geraet',          count(Push::forUser((int)$bruno['id'])), 
 
 $pdo->prepare('DELETE FROM users WHERE id = :id')->execute(['id' => (int)$bruno['id']]);
 check('Geloeschtes Profil hat keine Abos mehr', count(Push::forUser((int)$bruno['id'])), 0);
+
+echo "\nAngemeldet bleiben\n";
+
+// Remember arbeitet mit $_COOKIE und setcookie(). Auf der Kommandozeile
+// laeuft setcookie() ins Leere (kein Kopfbereich), $_COOKIE laesst sich aber
+// setzen - und genau darueber liest die Klasse. Das genuegt fuer die Logik.
+$_SERVER['SCRIPT_NAME'] = '/index.php';
+$_SESSION = [];
+$_COOKIE  = [];
+
+check('Ohne Cookie keine Anmeldung',   Remember::attempt(), null);
+
+Remember::remember($childId, true);
+$cookie = $_COOKIE[Remember::COOKIE] ?? '';
+check('Cookie wurde gesetzt',          $cookie !== '', true);
+check('Aufbau selector:validator',     (bool)preg_match('/^[a-f0-9]{18}:[a-f0-9]{64}$/', $cookie), true);
+
+[$selector, $validator] = explode(':', $cookie, 2);
+$zeile = $pdo->query("SELECT * FROM remember_tokens WHERE selector = '" . $selector . "'")->fetch();
+check('Selector steht im Klartext da', $zeile['selector'], $selector);
+check('Validator steht nur als Hash',  $zeile['validator'], hash('sha256', $validator));
+check('Validator steht nicht im Klartext', str_contains(json_encode($zeile), $validator), false);
+check('Herkunft Link ist vermerkt',    (int)$zeile['via_link'], 1);
+
+$_SESSION = [];
+$wieder = Remember::attempt();
+check('Cookie meldet wieder an',       (int)($wieder['id'] ?? 0), $childId);
+check('Sitzung ist wieder gefuellt',   (int)$_SESSION['user_id'], $childId);
+check('Und weiss vom Link',            $_SESSION['via_link'], true);
+
+// Genau das ist der Sinn: ueber den Link hereingekommen, keine PIN-Pflicht.
+check('Kein erzwungener PIN-Wechsel',  Auth::mustChangePin(), false);
+
+// Ein veraenderter Validator darf nicht durchgehen.
+$_SESSION = [];
+$echt = $_COOKIE[Remember::COOKIE];
+$_COOKIE[Remember::COOKIE] = $selector . ':' . str_repeat('a', 64);
+check('Falscher Validator wird abgewiesen', Remember::attempt(), null);
+
+$_COOKIE[Remember::COOKIE] = str_repeat('b', 18) . ':' . $validator;
+check('Unbekannter Selector wird abgewiesen', Remember::attempt(), null);
+
+$_COOKIE[Remember::COOKIE] = 'unsinn';
+check('Unsinn wird abgewiesen',        Remember::attempt(), null);
+
+$_COOKIE[Remember::COOKIE] = '../../etc/passwd:x';
+check('Pfadangaben werden abgewiesen', Remember::attempt(), null);
+
+$_COOKIE[Remember::COOKIE] = $echt;
+check('Das echte Cookie gilt weiter',  (int)(Remember::attempt()['id'] ?? 0), $childId);
+
+// Abgelaufene Token gelten nicht mehr.
+$pdo->prepare('UPDATE remember_tokens SET expires_at = :gestern WHERE selector = :s')
+    ->execute(['gestern' => date('Y-m-d H:i:s', time() - 3600), 's' => $selector]);
+$_SESSION = [];
+check('Abgelaufenes Cookie gilt nicht', Remember::attempt(), null);
+
+// Neues Token: das alte desselben Geraets wird ersetzt, nicht ergaenzt.
+$_COOKIE = [];
+Remember::remember($childId, false);
+$ersteZahl = (int)$pdo->query('SELECT COUNT(*) FROM remember_tokens')->fetchColumn();
+Remember::remember($childId, false);
+check('Zweite Anmeldung ersetzt die erste',
+      (int)$pdo->query('SELECT COUNT(*) FROM remember_tokens')->fetchColumn(), $ersteZahl);
+
+// Zwei Geraete, zwei Token.
+$geraetA = $_COOKIE[Remember::COOKIE];
+$_COOKIE = [];
+Remember::remember($childId, false);
+$geraetB = $_COOKIE[Remember::COOKIE];
+check('Zwei Geraete, zwei Token',      $geraetA === $geraetB, false);
+check('Beide zaehlen',                 Remember::deviceCounts()[$childId] ?? 0, 2);
+
+// Abmelden trifft nur das eigene Geraet.
+Remember::forget();
+check('Nur dieses Geraet ist abgemeldet', Remember::deviceCounts()[$childId] ?? 0, 1);
+check('Cookie ist weg',                   $_COOKIE[Remember::COOKIE] ?? null, null);
+
+$_COOKIE[Remember::COOKIE] = $geraetA;
+check('Das andere Geraet gilt noch',      (int)(Remember::attempt()['id'] ?? 0), $childId);
+
+// Ein zurueckgezogener Zugangslink beendet die Link-Anmeldungen -
+// und nur die. Wer die PIN benutzt hat, bleibt drin.
+$_COOKIE = [];
+Remember::forgetAll($childId);
+Remember::remember($childId, true);   // per Link
+$perLink = $_COOKIE[Remember::COOKIE];
+$_COOKIE = [];
+Remember::remember($childId, false);  // per PIN
+$perPin = $_COOKIE[Remember::COOKIE];
+check('Zwei Anmeldungen',                 Remember::deviceCounts()[$childId] ?? 0, 2);
+
+Users::createToken($childId);
+Users::clearToken($childId);
+check('Link zurueckgezogen: ein Geraet weniger', Remember::deviceCounts()[$childId] ?? 0, 1);
+
+$_SESSION = [];
+$_COOKIE[Remember::COOKIE] = $perLink;
+check('Das Link-Geraet ist draussen',     Remember::attempt(), null);
+
+$_SESSION = [];
+$_COOKIE[Remember::COOKIE] = $perPin;
+check('Das PIN-Geraet ist noch drin',     (int)(Remember::attempt()['id'] ?? 0), $childId);
+
+// Ein neuer Link macht den alten ungueltig - auch fuer angemeldete Geraete.
+$_COOKIE = [];
+Remember::forgetAll($childId);
+Users::createToken($childId);
+Remember::remember($childId, true);
+check('Mit Link angemeldet',              Remember::deviceCounts()[$childId] ?? 0, 1);
+Users::createToken($childId);
+check('Neuer Link meldet das Geraet ab',  Remember::deviceCounts()[$childId] ?? 0, 0);
+
+// Gesperrte oder geloeschte Profile kommen nicht zurueck.
+$_COOKIE = [];
+Remember::remember((int)$julius['id'], false);
+$pdo->prepare('UPDATE users SET is_active = 0 WHERE id = :id')->execute(['id' => (int)$julius['id']]);
+$_SESSION = [];
+check('Stillgelegtes Profil kommt nicht zurueck', Remember::attempt(), null);
+check('Und sein Token ist geloescht',             Remember::deviceCounts()[(int)$julius['id']] ?? 0, 0);
+$pdo->prepare('UPDATE users SET is_active = 1 WHERE id = :id')->execute(['id' => (int)$julius['id']]);
+
+check('Alle abmelden gibt die Anzahl zurueck', Remember::forgetAll($childId), Remember::deviceCounts()[$childId] ?? 0);
+
+$_SESSION = [];
+$_COOKIE  = [];
 
 // Aufraeumen
 foreach (glob($tmp . '/*') ?: [] as $file) {

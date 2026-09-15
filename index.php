@@ -29,6 +29,11 @@ require APP_DIR . '/Controller/PushController.php';
 Database::pdo();
 Billing::run();
 
+// Wer ein gueltiges Dauer-Cookie hat, ist wieder angemeldet – auch wenn die
+// PHP-Sitzung laengst weggeraeumt wurde. Muss vor allem stehen, was nach dem
+// angemeldeten Benutzer fragt.
+Auth::restore();
+
 // Persoenlicher Zugangslink (?z=...). Nach der Anmeldung wird sofort
 // weitergeleitet, damit der Token nicht in der Adresszeile stehen bleibt.
 $token = param('z');

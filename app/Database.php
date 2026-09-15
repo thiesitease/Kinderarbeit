@@ -161,6 +161,18 @@ final class Database
             UNIQUE (expense_id, month)
         );
 
+        CREATE TABLE IF NOT EXISTS remember_tokens (
+            id           INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id      INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            selector     TEXT    NOT NULL UNIQUE,
+            validator    TEXT    NOT NULL,
+            via_link     INTEGER NOT NULL DEFAULT 0,
+            user_agent   TEXT    NOT NULL DEFAULT '',
+            created_at   TEXT    NOT NULL,
+            last_used_at TEXT,
+            expires_at   TEXT    NOT NULL
+        );
+
         CREATE TABLE IF NOT EXISTS push_subscriptions (
             id         INTEGER PRIMARY KEY AUTOINCREMENT,
             user_id    INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -184,6 +196,7 @@ final class Database
         CREATE INDEX IF NOT EXISTS idx_ledger_month       ON ledger (child_id, booked_month);
         CREATE INDEX IF NOT EXISTS idx_expenses_child     ON expenses (child_id, is_active);
         CREATE INDEX IF NOT EXISTS idx_push_user          ON push_subscriptions (user_id);
+        CREATE INDEX IF NOT EXISTS idx_remember_user      ON remember_tokens (user_id);
         SQL);
 
         // Spalten, die erst spaeter dazugekommen sind, in bestehenden

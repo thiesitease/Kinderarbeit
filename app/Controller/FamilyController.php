@@ -23,6 +23,7 @@ final class FamilyController
             'emojis'      => self::EMOJIS,
             'highlight'   => $highlight,
             'pushDevices' => Push::deviceCounts(),
+            'loggedIn'    => Remember::deviceCounts(),
         ]);
     }
 
@@ -78,6 +79,17 @@ final class FamilyController
             case 'clear-link':
                 Users::clearToken($id);
                 Flash::info('Der Zugangslink von ' . $user['name'] . ' wurde zurückgezogen.');
+                break;
+
+            case 'geraete-abmelden':
+                $anzahl = Remember::forgetAll($id);
+                Flash::info(
+                    $anzahl === 0
+                        ? $user['name'] . ' ist auf keinem Gerät dauerhaft angemeldet.'
+                        : ($anzahl === 1 ? 'Ein Gerät' : $anzahl . ' Geräte')
+                          . ' von ' . $user['name'] . ' wurde' . ($anzahl === 1 ? '' : 'n')
+                          . ' abgemeldet. Beim nächsten Besuch wird wieder nach PIN oder Link gefragt.'
+                );
                 break;
 
             case 'push-loeschen':
