@@ -1,0 +1,148 @@
+# Kinderarbeit – Wartung auf dem Server
+#
+# Läuft nur von Hand: Actions → Wartung → „Run workflow“.
+#
+# Gedacht für die Fälle, in denen etwas auf dem Server passieren muss, ohne
+# dass jemand eine SSH-Sitzung aufmacht. Nutzt dieselben Secrets wie die
+# Veröffentlichung und macht **eine** SSH-Verbindung pro Lauf – der Server
+# von manitu sperrt eine IP nach wenigen Verbindungen in kurzer Zeit.
+#
+# Absichtlich NICHT hier drin:
+#
+# * „alles löschen“ – das macht die Zugangslinks der Kinder ungültig und
+#   gehört an eine Stelle, an der man es tippt und nicht anklickt.
+# * Zugangslinks anzeigen – die stünden danach im Protokoll dieses Laufs,
+#   und ein Protokoll bleibt. Wer einen Link braucht, holt ihn im
+#   Elternbereich unter „Familie“ oder direkt über SSH.
+#
+# Beides also weiterhin von Hand:
+#
+#     ssh <benutzer>@<server> "cd <pfad> && php bin/leeren.php alles"
+
+name: Wartung
+
+on:
+  workflow_dispatch:
+    inputs:
+      aufgabe:
+        description: 'Was soll passieren?'
+        required: true
+        default: anzeigen
+        type: choice
+        options:
+          - anzeigen
+          - verlauf-leeren
+      bestaetigen:
+        description: 'Zum Löschen hier "ja" eintippen (sonst wird nichts gelöscht)'
+        required: false
+        default: ''
+        type: string
+
+# Nicht gleichzeitig mit einer Veröffentlichung – beide fassen dieselben
+# Dateien an, und beide zählen auf dasselbe Verbindungskonto.
+concurrency:
+  group: deploy
+  cancel-in-progress: false
+
+jobs:
+  wartung:
+    name: Auf dem Server ausführen
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Was ist zu tun?
+        id: plan
+        env:
+          AUFGABE: ${{ inputs.aufgabe }}
+          BESTAETIGEN: ${{ inputs.bestaetigen }}
+        run: |
+          case "$AUFGABE" in
+            anzeigen)
+              echo "befehl=php bin/leeren.php" >> "$GITHUB_OUTPUT"
+              echo "Es wird nur angezeigt, was in der Datenbank steht. Gelöscht wird nichts."
+              ;;
+            verlauf-leeren)
+              if [ "$BESTAETIGEN" != "ja" ]; then
+                echo "::error::Zum Löschen muss im Feld „bestaetigen“ genau ja stehen."
+                echo "Es wurde nichts gelöscht."
+                exit 1
+              fi
+              echo "befehl=php bin/leeren.php verlauf --ja" >> "$GITHUB_OUTPUT"
+              echo "Gelöscht werden Buchungen, gemeldete Aufgaben und abgebuchte Ausgaben."
+              echo "Profile, PINs, Zugangslinks, Aufgaben und feste Ausgaben bleiben."
+              echo "Das Werkzeug legt vorher eine Sicherung in data/ an."
+              ;;
+            *)
+              echo "::error::Unbekannte Aufgabe: $AUFGABE"
+              exit 1
+              ;;
+          esac
+
+      - name: Sind die Secrets hinterlegt?
+        env:
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_USER: ${{ secrets.SSH_USER }}
+          SSH_KEY: ${{ secrets.SSH_KEY }}
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+          SSH_KNOWN_HOSTS: ${{ secrets.SSH_KNOWN_HOSTS }}
+        run: |
+          fehlt=""
+          [ -n "$SSH_HOST" ]        || fehlt="$fehlt SSH_HOST"
+          [ -n "$SSH_USER" ]        || fehlt="$fehlt SSH_USER"
+          [ -n "$SSH_KEY" ]         || fehlt="$fehlt SSH_KEY"
+          [ -n "$DEPLOY_PATH" ]     || fehlt="$fehlt DEPLOY_PATH"
+          [ -n "$SSH_KNOWN_HOSTS" ] || fehlt="$fehlt SSH_KNOWN_HOSTS"
+
+          if [ -n "$fehlt" ]; then
+            echo "::error::Es fehlen Secrets:$fehlt"
+            echo "Anzulegen unter Settings → Secrets and variables → Actions."
+            exit 1
+          fi
+          echo "Alle benötigten Secrets sind hinterlegt."
+
+      - name: SSH vorbereiten
+        env:
+          # Secrets über die Umgebung statt in die Befehlszeile – so kann aus
+          # ihrem Inhalt nichts als Kommando ausgeführt werden.
+          SSH_KEY: ${{ secrets.SSH_KEY }}
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_PORT: ${{ secrets.SSH_PORT }}
+          SSH_KNOWN_HOSTS: ${{ secrets.SSH_KNOWN_HOSTS }}
+        run: |
+          mkdir -p ~/.ssh && chmod 700 ~/.ssh
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/id_deploy
+          chmod 600 ~/.ssh/id_deploy
+          printf '%s\n' "$SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/known_hosts
+
+          # Kein ssh-keyscan und keine Wiederholungsschleife: jede Verbindung
+          # zählt gegen die Sperre der Firewall. Kein "User" in der
+          # Konfiguration, weil der Benutzername bei manitu einen Backslash
+          # enthalten kann, den OpenSSH je nach Version als Escape auswertet.
+          {
+            echo "Host ziel"
+            echo "  HostName $SSH_HOST"
+            echo "  Port ${SSH_PORT:-22}"
+            echo "  IdentityFile ~/.ssh/id_deploy"
+            echo "  IdentitiesOnly yes"
+            echo "  StrictHostKeyChecking yes"
+            echo "  AddressFamily inet"
+            echo "  BatchMode yes"
+            echo "  PasswordAuthentication no"
+            echo "  KbdInteractiveAuthentication no"
+            echo "  ConnectTimeout 60"
+            echo "  ServerAliveInterval 15"
+            echo "  ServerAliveCountMax 8"
+          } > ~/.ssh/config
+          chmod 600 ~/.ssh/config
+
+      - name: Ausführen
+        env:
+          SSH_USER: ${{ secrets.SSH_USER }}
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+          BEFEHL: ${{ steps.plan.outputs.befehl }}
+        run: |
+          echo "Befehl: $BEFEHL"
+          echo "────────────────────────────────────────────────────────"
+          ssh "$SSH_USER@ziel" "cd '$DEPLOY_PATH' && $BEFEHL"
