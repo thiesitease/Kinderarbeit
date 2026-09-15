@@ -9,6 +9,26 @@ haken sie ab, Eltern bestätigen einmal, dann wird gutgeschrieben.
 **Alles ist auf Deutsch** – Oberfläche, Kommentare, Commit-Nachrichten, Dokumentation.
 Das bitte beibehalten.
 
+## Commits
+
+Autor und Committer sind immer **Thies Reinhold**
+`<65960018+thiesitease@users.noreply.github.com>`, auch wenn Claude die Arbeit macht.
+Keine `Co-Authored-By:`-Zeile, keine `Claude-Session:`-Zeile, kein „Generated with“-Hinweis
+in der Nachricht.
+
+Der Grund: GitHub verknüpft `noreply@anthropic.com` mit dem fremden Konto
+github.com/claude und trägt es bei jeder solchen Zeile in die Contributor-Liste dieses
+Repositorys ein. Die History wurde einmal davon bereinigt – sie soll es bleiben.
+
+Auch nicht signieren: der Schlüssel einer Claude-Sitzung gehört nicht zu diesem
+GitHub-Konto, die Commits stünden sonst als „Unverified“ da.
+
+```bash
+git config user.name "Thies Reinhold"
+git config user.email "65960018+thiesitease@users.noreply.github.com"
+git config commit.gpgsign false
+```
+
 ## Befehle
 
 ```bash
