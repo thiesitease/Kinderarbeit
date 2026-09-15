@@ -25,7 +25,7 @@ $istKind = ($me['role'] ?? '') === 'child';
 
   <div class="row" data-push-state="aus" hidden>
     <span class="push__icon" aria-hidden="true">🔔</span>
-    <div class="push__text">
+    <div class="row__text">
       <div class="push__title">Benachrichtigungen einschalten</div>
       <div class="small muted">
         <?php if ($istKind): ?>
@@ -42,7 +42,7 @@ $istKind = ($me['role'] ?? '') === 'child';
 
   <div class="row" data-push-state="an" hidden>
     <span class="push__icon" aria-hidden="true">🔔</span>
-    <div class="push__text">
+    <div class="row__text">
       <div class="push__title">Benachrichtigungen sind an</div>
       <div class="small muted">Auf diesem Gerät. Andere Geräte werden einzeln eingeschaltet.</div>
     </div>
@@ -51,7 +51,7 @@ $istKind = ($me['role'] ?? '') === 'child';
 
   <div class="row" data-push-state="blockiert" hidden>
     <span class="push__icon" aria-hidden="true">🔕</span>
-    <div class="push__text">
+    <div class="row__text">
       <div class="push__title">Benachrichtigungen sind im Browser gesperrt</div>
       <div class="small muted">
         Das lässt sich nur in den Einstellungen des Browsers wieder erlauben –
@@ -62,7 +62,7 @@ $istKind = ($me['role'] ?? '') === 'child';
 
   <div class="row" data-push-state="ios" hidden>
     <span class="push__icon" aria-hidden="true">📲</span>
-    <div class="push__text">
+    <div class="row__text">
       <div class="push__title">Erst zum Home-Bildschirm hinzufügen</div>
       <div class="small muted">
         Auf dem iPhone gibt es Benachrichtigungen nur, wenn die Seite als App
@@ -73,7 +73,7 @@ $istKind = ($me['role'] ?? '') === 'child';
 
   <div class="row" data-push-state="fehler" hidden>
     <span class="push__icon" aria-hidden="true">⚠️</span>
-    <div class="push__text">
+    <div class="row__text">
       <div class="push__title">Das hat nicht geklappt</div>
       <div class="small muted" data-push-fehler></div>
     </div>
