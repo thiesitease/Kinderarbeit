@@ -91,6 +91,7 @@ final class Database
             access_token    TEXT UNIQUE,
             token_created_at TEXT,
             token_used_at   TEXT,
+            phone           TEXT,
             created_at      TEXT    NOT NULL
         );
 
@@ -165,6 +166,30 @@ final class Database
             UNIQUE (expense_id, month)
         );
 
+        CREATE TABLE IF NOT EXISTS remember_tokens (
+            id           INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id      INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            selector     TEXT    NOT NULL UNIQUE,
+            validator    TEXT    NOT NULL,
+            via_link     INTEGER NOT NULL DEFAULT 0,
+            user_agent   TEXT    NOT NULL DEFAULT '',
+            created_at   TEXT    NOT NULL,
+            last_used_at TEXT,
+            expires_at   TEXT    NOT NULL
+        );
+
+        CREATE TABLE IF NOT EXISTS push_subscriptions (
+            id         INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id    INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            endpoint   TEXT    NOT NULL UNIQUE,
+            p256dh     TEXT    NOT NULL,
+            auth       TEXT    NOT NULL,
+            user_agent TEXT    NOT NULL DEFAULT '',
+            created_at TEXT    NOT NULL,
+            last_ok_at TEXT,
+            failures   INTEGER NOT NULL DEFAULT 0
+        );
+
         CREATE TABLE IF NOT EXISTS settings (
             key   TEXT PRIMARY KEY,
             value TEXT NOT NULL
@@ -175,6 +200,8 @@ final class Database
         CREATE INDEX IF NOT EXISTS idx_ledger_child       ON ledger (child_id, booked_at);
         CREATE INDEX IF NOT EXISTS idx_ledger_month       ON ledger (child_id, booked_month);
         CREATE INDEX IF NOT EXISTS idx_expenses_child     ON expenses (child_id, is_active);
+        CREATE INDEX IF NOT EXISTS idx_push_user          ON push_subscriptions (user_id);
+        CREATE INDEX IF NOT EXISTS idx_remember_user      ON remember_tokens (user_id);
         SQL);
 
         // Spalten, die erst spaeter dazugekommen sind, in bestehenden
@@ -182,6 +209,7 @@ final class Database
         self::addColumn($pdo, 'users', 'access_token', 'TEXT');
         self::addColumn($pdo, 'users', 'token_created_at', 'TEXT');
         self::addColumn($pdo, 'users', 'token_used_at', 'TEXT');
+        self::addColumn($pdo, 'users', 'phone', 'TEXT');
         self::addColumn($pdo, 'ledger', 'updated_by', 'INTEGER');
         self::addColumn($pdo, 'ledger', 'updated_at', 'TEXT');
 

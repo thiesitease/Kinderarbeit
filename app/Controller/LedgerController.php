@@ -109,10 +109,33 @@ final class LedgerController
                 self::goBack($childId);
             }
 
+            $neuerStand = Ledger::balance($childId);
+
             Flash::success(
                 'Die Buchung wurde geändert: ' . Money::format($signedAmount, true) . ' für ' . $child['name'] . '. '
-                . 'Neuer Kontostand: ' . Money::format(Ledger::balance($childId)) . '.'
+                . 'Neuer Kontostand: ' . Money::format($neuerStand) . '.'
             );
+
+            Push::toUser($childId, [
+                'title' => '✏️ Geändert: ' . mb_substr($description, 0, 60),
+                'body'  => 'Jetzt ' . Money::format($signedAmount, true)
+                         . ' · neuer Kontostand: ' . Money::format($neuerStand) . '.',
+                'url'   => url('kind-konto'),
+                'tag'   => 'buchung-' . $id,
+            ]);
+
+            // Wandert die Buchung zu einem anderen Kind, erfaehrt auch das
+            // bisherige, dass sein Konto sich geaendert hat.
+            $vorher = (int)$entry['child_id'];
+            if ($vorher !== $childId) {
+                Push::toUser($vorher, [
+                    'title' => '↔️ Verschoben: ' . mb_substr((string)$entry['description'], 0, 60),
+                    'body'  => Money::format(-(int)$entry['amount_cents'], true)
+                             . ' · neuer Kontostand: ' . Money::format(Ledger::balance($vorher)) . '.',
+                    'url'   => url('kind-konto'),
+                    'tag'   => 'buchung-' . $id,
+                ]);
+            }
         } else {
             Ledger::book(
                 $childId,
@@ -125,10 +148,20 @@ final class LedgerController
                 $bookedAt
             );
 
+            $neuerStand = Ledger::balance($childId);
+
             Flash::success(
                 Money::format($signedAmount, true) . ' für ' . $child['name'] . ' gebucht. '
-                . 'Neuer Kontostand: ' . Money::format(Ledger::balance($childId)) . '.'
+                . 'Neuer Kontostand: ' . Money::format($neuerStand) . '.'
             );
+
+            Push::toUser($childId, [
+                'title' => ($signedAmount >= 0 ? '💰 ' : '💸 ') . mb_substr($description, 0, 60),
+                'body'  => Money::format($signedAmount, true)
+                         . ' · neuer Kontostand: ' . Money::format($neuerStand) . '.',
+                'url'   => url('kind-konto'),
+                'tag'   => 'buchung',
+            ]);
         }
 
         self::goBack($childId);
@@ -169,10 +202,21 @@ final class LedgerController
             default => '',
         };
 
+        $neuerStand = Ledger::balance($childId);
+
         Flash::info(
             '„' . $entry['description'] . '“ (' . Money::format((int)$entry['amount_cents'], true) . ') gelöscht.'
-            . $hint . ' Kontostand von ' . $entry['child_name'] . ': ' . Money::format(Ledger::balance($childId)) . '.'
+            . $hint . ' Kontostand von ' . $entry['child_name'] . ': ' . Money::format($neuerStand) . '.'
         );
+
+        Push::toUser($childId, [
+            'title' => '🗑 Gelöscht: ' . mb_substr((string)$entry['description'], 0, 60),
+            'body'  => Money::format(-(int)$entry['amount_cents'], true)
+                     . ' · neuer Kontostand: ' . Money::format($neuerStand) . '.',
+            'url'   => url('kind-konto'),
+            'tag'   => 'buchung-' . (int)$entry['id'],
+        ]);
+
         self::goBack($childId);
     }
 

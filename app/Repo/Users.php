@@ -98,19 +98,31 @@ final class Users
      */
     public static function createToken(int $id): string
     {
+        $bisher = self::find($id)['access_token'] ?? null;
+
         $token = random_token(16);
         Database::pdo()->prepare(
             'UPDATE users SET access_token = :token, token_created_at = :now, token_used_at = NULL WHERE id = :id'
         )->execute(['token' => $token, 'now' => now(), 'id' => $id]);
+
+        // Der bisherige Link soll wirklich nicht mehr gelten. Ohne das
+        // bliebe ein Geraet, das damit dauerhaft angemeldet wurde, drin –
+        // und genau das ist der Fall, fuer den man den Link neu erzeugt.
+        if ($bisher !== null) {
+            Remember::forgetLinkDevices($id);
+        }
+
         return $token;
     }
 
-    /** Zugangslink zurueckziehen. */
+    /** Zugangslink zurueckziehen – samt der damit angemeldeten Geraete. */
     public static function clearToken(int $id): void
     {
         Database::pdo()->prepare(
             'UPDATE users SET access_token = NULL, token_created_at = NULL, token_used_at = NULL WHERE id = :id'
         )->execute(['id' => $id]);
+
+        Remember::forgetLinkDevices($id);
     }
 
     /** Profil zu einem Zugangslink finden. */
@@ -130,6 +142,19 @@ final class Users
         Database::pdo()->prepare(
             'UPDATE users SET token_used_at = :now, last_login_at = :now, failed_logins = 0, locked_until = NULL WHERE id = :id'
         )->execute(['now' => now(), 'id' => $id]);
+    }
+
+    /** Handynummer hinterlegen oder mit null entfernen. */
+    public static function setPhone(int $id, ?string $number): void
+    {
+        Database::pdo()->prepare('UPDATE users SET phone = :phone WHERE id = :id')
+            ->execute(['phone' => $number, 'id' => $id]);
+    }
+
+    /** Eltern, die per WhatsApp erreichbar sind. */
+    public static function parentsWithPhone(): array
+    {
+        return array_values(array_filter(self::parents(), static fn (array $u): bool => !empty($u['phone'])));
     }
 
     /** Sperre eines Profils vorzeitig aufheben. */

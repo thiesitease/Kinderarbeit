@@ -27,7 +27,7 @@ mb_internal_encoding('UTF-8');
 error_reporting(E_ALL);
 ini_set('display_errors', '1');
 
-foreach (['helpers', 'Money', 'Database', 'Billing', 'Repo/Users', 'Repo/Tasks', 'Repo/Completions', 'Repo/Ledger', 'Repo/Expenses'] as $file) {
+foreach (['helpers', 'Money', 'Phone', 'Database', 'Billing', 'Remember', 'Repo/Users', 'Repo/Tasks', 'Repo/Completions', 'Repo/Ledger', 'Repo/Expenses'] as $file) {
     require APP_DIR . '/' . $file . '.php';
 }
 
@@ -178,6 +178,18 @@ Ledger::book((int)$bruno['id'],     500, 'Zeugnis-Bonus', 'bonus', 'manual', nul
 
 // --- Feste Ausgaben nachbuchen ---------------------------------------------------
 $booked = Billing::run(true);
+
+// --- Handynummern fuer die WhatsApp-Knoepfe ---------------------------------------
+// Erfundene Nummern aus dem Bereich, den die Bundesnetzagentur fuer Film und
+// Fernsehen reserviert hat - so ruft ein Klick im Beispielbestand niemanden an.
+Users::setPhone((int)$thies['id'],    Phone::normalize('0152 28817001'));
+Users::setPhone((int)$birgitta['id'], Phone::normalize('0152 28817002'));
+Users::setPhone((int)$emilius['id'],  Phone::normalize('0152 28817003'));
+Users::setPhone((int)$julius['id'],   Phone::normalize('0152 28817004'));
+Users::setPhone((int)$bruno['id'],    Phone::normalize('0152 28817005'));
+
+// --- Ein Zugangslink, damit man sieht, wie er aussieht ----------------------------
+Users::createToken((int)$emilius['id']);
 
 // --- Eltern haben ihre PIN bereits gesetzt ---------------------------------------
 Users::setPin((int)$thies['id'], '8642', false);

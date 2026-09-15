@@ -16,6 +16,24 @@ final class Auth
 
     private static ?array $user = null;
 
+    /**
+     * Angemeldet bleiben: fehlt die Sitzung, aber es liegt ein gueltiges
+     * Dauer-Cookie vor, wird die Sitzung stillschweigend neu aufgebaut.
+     *
+     * Wird einmal pro Aufruf gebraucht, bevor irgendetwas Auth::user() fragt.
+     * Ohne das waere jeder nach 24 Minuten Untaetigkeit wieder draussen –
+     * so lange lebt eine PHP-Sitzung in der Voreinstellung.
+     */
+    public static function restore(): void
+    {
+        if ((int)($_SESSION['user_id'] ?? 0) > 0) {
+            return;
+        }
+        if (Remember::attempt() !== null) {
+            self::$user = null;
+        }
+    }
+
     /** Aktuell angemeldeter Benutzer oder null. */
     public static function user(): ?array
     {
@@ -92,6 +110,12 @@ final class Auth
         $_SESSION['via_link'] = true;
         self::$user = null;
 
+        // Genau dafuer ist der Link da: einmal oeffnen, danach genuegt die
+        // Adresse der Anwendung. Das Dauer-Cookie haelt auch fest, dass der
+        // Zugang ueber den Link kam – sonst fragte die Anwendung spaeter
+        // doch noch nach der PIN.
+        Remember::remember((int)$user['id'], true);
+
         return true;
     }
 
@@ -136,11 +160,18 @@ final class Auth
         $_SESSION['user_id'] = (int)$user['id'];
         self::$user = null;
 
+        Remember::remember((int)$user['id'], false);
+
         return true;
     }
 
     public static function logout(): void
     {
+        // Zuerst, solange die Datenbank noch erreichbar ist und das Cookie
+        // noch steht: sonst bliebe das Geraet dauerhaft angemeldet und
+        // "Abmelden" waere wirkungslos.
+        Remember::forget();
+
         self::$user = null;
         $_SESSION = [];
         if (ini_get('session.use_cookies')) {

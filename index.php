@@ -23,10 +23,16 @@ require APP_DIR . '/Controller/TaskController.php';
 require APP_DIR . '/Controller/ExpenseController.php';
 require APP_DIR . '/Controller/LedgerController.php';
 require APP_DIR . '/Controller/FamilyController.php';
+require APP_DIR . '/Controller/PushController.php';
 
 // Datenbank oeffnen (legt sie beim ersten Aufruf an) und faellige Abbuchungen nachholen.
 Database::pdo();
 Billing::run();
+
+// Wer ein gueltiges Dauer-Cookie hat, ist wieder angemeldet – auch wenn die
+// PHP-Sitzung laengst weggeraeumt wurde. Muss vor allem stehen, was nach dem
+// angemeldeten Benutzer fragt.
+Auth::restore();
 
 // Persoenlicher Zugangslink (?z=...). Nach der Anmeldung wird sofort
 // weitergeleitet, damit der Token nicht in der Adresszeile stehen bleibt.
@@ -93,6 +99,10 @@ try {
         case 'buchung-save':   LedgerController::save();           break;
         case 'buchung-aktion': LedgerController::action();         break;
         case 'verlauf':        LedgerController::history();        break;
+
+        // --- Benachrichtigungen ----------------------------------------------
+        case 'push-an':        PushController::subscribe();        break;
+        case 'push-aus':       PushController::unsubscribe();      break;
 
         // --- Familie und Einstellungen ---------------------------------------
         case 'familie':        FamilyController::index();          break;

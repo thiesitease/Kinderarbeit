@@ -29,6 +29,15 @@ RedirectMatch 404 ^/(app|data|bin|docs)(/|$)
   </IfModule>
 </Files>
 
+# Der Service Worker steuert, welche Fassung der Anwendung Benachrichtigungen
+# anzeigt. Er darf nicht aus dem Zwischenspeicher kommen, sonst laeuft nach
+# einem Update tagelang die alte Fassung weiter.
+<Files "sw.js">
+  <IfModule mod_headers.c>
+    Header set Cache-Control "no-cache"
+  </IfModule>
+</Files>
+
 # --- Versteckte Dateien schuetzen -------------------------------------------
 <FilesMatch "^\.">
   <IfModule mod_authz_core.c>

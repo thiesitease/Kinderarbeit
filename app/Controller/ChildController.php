@@ -26,6 +26,7 @@ final class ChildController
             'expenses'       => Expenses::all($childId, true),
             'month'          => $month,
             'daysLeft'       => days_left_in_month(),
+            'reachableParents' => Users::parentsWithPhone(),
         ]);
     }
 
@@ -61,6 +62,14 @@ final class ChildController
         }
 
         Completions::submit($task, (int)$me['id'], param('note'));
+
+        Push::toParents([
+            'title' => '⏳ ' . $me['name'] . ' hat etwas erledigt',
+            'body'  => $task['title'] . ' · ' . Money::format((int)$task['amount_cents']) . ' – bitte bestätigen.',
+            'url'   => url('eltern'),
+            'tag'   => 'wiedervorlage',
+        ]);
+
         Flash::success('Super! „' . $task['title'] . '“ wartet jetzt auf die Bestätigung von Mama oder Papa.');
         redirect('kind');
     }

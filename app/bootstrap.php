@@ -32,17 +32,21 @@ ini_set('error_log', DATA_DIR . '/php-error.log');
 
 require APP_DIR . '/helpers.php';
 require APP_DIR . '/Money.php';
+require APP_DIR . '/Phone.php';
 require APP_DIR . '/Database.php';
 require APP_DIR . '/Csrf.php';
+require APP_DIR . '/Remember.php';
 require APP_DIR . '/Auth.php';
 require APP_DIR . '/Flash.php';
 require APP_DIR . '/Billing.php';
+require APP_DIR . '/WebPush.php';
 require APP_DIR . '/View.php';
 require APP_DIR . '/Repo/Users.php';
 require APP_DIR . '/Repo/Tasks.php';
 require APP_DIR . '/Repo/Completions.php';
 require APP_DIR . '/Repo/Ledger.php';
 require APP_DIR . '/Repo/Expenses.php';
+require APP_DIR . '/Repo/Push.php';
 
 /** Session sicher starten (Cookie nur via HTTP, SameSite=Lax, Secure wenn HTTPS). */
 function app_start_session(): void
@@ -50,6 +54,21 @@ function app_start_session(): void
     if (session_status() === PHP_SESSION_ACTIVE) {
         return;
     }
+
+    // Eigenes Verzeichnis fuer die Sitzungsdateien. Auf geteiltem Webhosting
+    // liegen sie sonst in einem gemeinsamen Verzeichnis, aus dem andere
+    // Websites desselben Servers lesen koennen und das deren Aufraeumlaeufe
+    // mitleeren. Wer das Verzeichnis uebernimmt, muss allerdings auch selbst
+    // aufraeumen – deshalb die beiden gc-Werte: sonst blieben die Dateien
+    // fuer immer liegen.
+    $sitzungen = DATA_DIR . '/sessions';
+    if (is_dir($sitzungen) || @mkdir($sitzungen, 0700, true)) {
+        ini_set('session.gc_maxlifetime', (string)(60 * 60 * 24 * 30));
+        ini_set('session.gc_probability', '1');
+        ini_set('session.gc_divisor', '500');
+        session_save_path($sitzungen);
+    }
+
     session_set_cookie_params([
         'lifetime' => 60 * 60 * 24 * 30,
         'path'     => dirname($_SERVER['SCRIPT_NAME'] ?? '/') ?: '/',
@@ -61,14 +80,3 @@ function app_start_session(): void
     session_start();
 }
 
-function is_https(): bool
-{
-    if (!empty($_SERVER['HTTPS']) && strtolower((string)$_SERVER['HTTPS']) !== 'off') {
-        return true;
-    }
-    if (($_SERVER['SERVER_PORT'] ?? '') === '443') {
-        return true;
-    }
-    $proto = $_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '';
-    return strtolower((string)$proto) === 'https';
-}
