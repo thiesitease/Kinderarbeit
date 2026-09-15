@@ -1,8 +1,9 @@
 # Kinderarbeit – Veröffentlichen auf die eigene Subdomain
 #
-# Läuft bei jedem Push auf den Hauptbranch und lässt sich unter "Actions"
-# auch von Hand starten. Solange die Secrets fehlen, wird nur geprüft und
-# der Deploy übersprungen – dann ist noch nichts kaputt.
+# Geprüft wird bei jedem Push, veröffentlicht nur vom Hauptbranch; unter
+# "Actions" lässt sich der Ablauf auch von Hand starten. Solange die Secrets
+# fehlen, wird nur geprüft und der Deploy übersprungen – dann ist noch nichts
+# kaputt.
 #
 # Benötigte Secrets (Settings → Secrets and variables → Actions):
 #   SSH_HOST          Server, z. B. ssh.manitu.de
@@ -20,9 +21,6 @@ name: Veröffentlichen
 
 on:
   push:
-    branches:
-      - claude/kinderarbeit-task-management-3s833z
-      - main
   workflow_dispatch:
 
 # Nie zwei Deploys gleichzeitig – und einen laufenden nicht abbrechen,
@@ -69,6 +67,10 @@ jobs:
   hochladen:
     name: Auf den Server übertragen
     needs: pruefen
+    # Veröffentlicht wird ausschließlich der Hauptbranch – ohne ihn beim Namen
+    # zu nennen, damit ein Umbenennen den Ablauf nicht stillschweigend abschaltet.
+    # Von Hand gestartet zählt, was man ausgewählt hat.
+    if: github.event_name == 'workflow_dispatch' || github.ref_name == github.event.repository.default_branch
     runs-on: ubuntu-latest
     # Rettungsleine: ein Deploy dauert Sekunden. Wenn nach 10 Minuten nichts
     # fertig ist, hängt etwas – dann lieber abbrechen als Stunden blockieren.
