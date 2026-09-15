@@ -212,7 +212,24 @@ php bin/cron.php            # bucht fällige feste Ausgaben (optional, siehe obe
 php bin/reset-pin.php Emilius 4711   # PIN zurücksetzen, wenn niemand mehr reinkommt
 php bin/zugangslink.php             # alle Zugangslinks anzeigen
 php bin/zugangslink.php Emilius     # neuen Zugangslink erzeugen
+php bin/leeren.php                  # zeigt, was in der Datenbank steht
+php bin/leeren.php verlauf          # Buchungen und Meldungen löschen
+php bin/leeren.php alles            # zurück auf Werkszustand
 ```
+
+`bin/leeren.php` ist die einzige Stelle, an der Buchungen verschwinden – im
+Elternbereich gibt es dafür bewusst keinen Knopf. Vor jedem Löschen entsteht
+eine Sicherung `data/sicherung-<Datum>.sqlite`; zurückspielen heißt, sie über
+`data/kinderarbeit.sqlite` zu kopieren. Ohne Argument wird nur angezeigt, mit
+`--ja` läuft es ohne Rückfrage.
+
+* **verlauf** löscht alle Buchungen, alle gemeldeten Aufgaben und die
+  abgebuchten festen Ausgaben. Profile, PINs, Zugangslinks, Handynummern,
+  angemeldete Geräte, Benachrichtigungen, die Aufgabenliste und die festen
+  Ausgaben bleiben. Deren Startmonat rückt auf den nächsten Monat, damit die
+  frisch geleerten Konten nicht sofort wieder im Minus stehen.
+* **alles** löscht die Datenbank. Beim nächsten Seitenaufruf entsteht sie neu,
+  mit den Start-PINs – alle Zugangslinks gelten dann nicht mehr.
 
 ## Lokal ausprobieren
 

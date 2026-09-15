@@ -16,6 +16,8 @@ php bin/selftest.php                 # 180 Prüfungen der Rechenlogik, ohne Webs
 php bin/demo-data.php --force        # Beispielbestand zum Ausprobieren (löscht die DB!)
 php bin/zugangslink.php Emilius      # Zugangslink erzeugen (Rettungsanker per SSH)
 php bin/reset-pin.php Thies 4711     # PIN zurücksetzen, wenn niemand mehr reinkommt
+php bin/leeren.php                   # zeigt den Bestand, löscht nichts
+php bin/leeren.php verlauf --ja      # Buchungen und Meldungen weg, Profile bleiben
 php -S localhost:8080                # lokal ausprobieren
 ```
 
@@ -125,6 +127,21 @@ nimmt ihn deshalb vom Zwischenspeichern aus.
 verliert gegen jede eigene Regel mit `display` – etwa `.row { display: flex }`.
 In `assets/app.css` steht deshalb ganz bewusst `[hidden] { display: none !important }`.
 Ohne das wären versteckte Elemente trotzdem zu sehen.
+
+**Löschen gibt es nur auf der Kommandozeile.** `bin/leeren.php` ist die einzige
+Stelle, an der Buchungen verschwinden – im Elternbereich gibt es bewusst keinen
+Knopf dafür, einen Fingerbreit neben dem Taschengeld der Kinder. Das Werkzeug
+legt vorher eine Sicherung in `data/` an (dort durch `.htaccess` gesperrt, in
+`.gitignore`, vom `rsync` ausgenommen) und fragt nach, solange nicht `--ja`
+dabeisteht.
+
+Zwei Fallen, die dort schon eingebaut sind: Nach dem Leeren rückt der
+`start_month` der festen Ausgaben auf den **nächsten** Monat – sonst holt
+`Billing::run()` beim nächsten Seitenaufruf jeden vergangenen Monat nach und die
+Abbuchungen wären sofort wieder da. Und die Datenbankdateien bekommen danach
+`chmod 0664`, weil auf dem Server der Webserver unter einem anderen Benutzer
+läuft als die Kommandozeile; im Werkszustand-Modus wird die Datei nur gelöscht
+und vom Webserver selbst neu angelegt, damit sie ihm gehört.
 
 **Abschottung.** `app/`, `data/`, `bin/` und `docs/` sind über `.htaccess` gesperrt;
 zusätzlich beginnt jede PHP-Datei außerhalb des Einstiegspunkts mit
