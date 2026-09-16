@@ -161,6 +161,21 @@ nach. Ohne das bekäme auf dem Familien-Tablet noch das vorige Kind die Nachrich
 Das **VAPID-Schlüsselpaar** entsteht einmal und liegt in `settings`. Ein neues Paar
 macht alle bestehenden Abonnements ungültig – also nie neu erzeugen.
 
+**Das Symbol für den Home-Bildschirm muss ein PNG sein.** iOS kann für
+`apple-touch-icon` kein SVG; fehlt ein PNG, nimmt es ein Bildschirmfoto der
+Seite als Symbol. Deshalb liegen in `assets/` neben der `favicon.svg` vier
+gerenderte PNGs (`apple-touch-icon.png` 180px, `icon-192`, `icon-512`,
+`icon-maskable-512`). Erzeugt werden sie aus demselben Motiv – ohne die
+abgerundeten Ecken der SVG, weil iOS seine eigene Maske darüberlegt, und beim
+maskierbaren mit 20 % Luft, weil Android beschneidet.
+
+Dazu drei Apple-Metazeilen im Layout: `apple-mobile-web-app-capable` (sonst
+öffnet das Symbol auf älteren iPads Safari statt einer eigenen App – und ohne
+eigene App gibt es dort keine Benachrichtigungen), `-status-bar-style` auf
+`default` (das Stylesheet kennt keine `env(safe-area-inset-*)`, bei
+`black-translucent` läge der Inhalt unter der Statusleiste) und
+`-title`, sonst schlägt iOS den Seitentitel als Namen vor.
+
 **`sw.js` gehört ins Wurzelverzeichnis.** Der Geltungsbereich eines Service Workers
 reicht nur so weit wie sein eigener Ordner; unter `assets/` läge er außerhalb der
 Anwendung. Er speichert bewusst nichts zwischen – die Seiten ändern sich mit jeder

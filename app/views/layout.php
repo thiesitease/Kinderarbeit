@@ -24,8 +24,16 @@ $pendingForNav = ($me && $me['role'] === 'parent') ? Completions::pendingCount()
 <meta name="theme-color" content="<?= e($accent) ?>">
 <meta name="robots" content="noindex, nofollow">
 <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
-<link rel="apple-touch-icon" href="assets/favicon.svg">
+<!-- iOS kann fuer das Symbol auf dem Home-Bildschirm kein SVG. Fehlt ein PNG,
+     nimmt es stattdessen ein Bildschirmfoto der Seite. -->
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
 <link rel="manifest" href="assets/manifest.webmanifest">
+<!-- Ohne das oeffnet das Symbol auf aelteren iPads die Seite in Safari statt
+     als eigene App - und ohne eigene App gibt es dort keine Benachrichtigungen. -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<!-- Sonst schlaegt iOS den Seitentitel als Namen vor („Meine Aufgaben · …“). -->
+<meta name="apple-mobile-web-app-title" content="Kinderarbeit">
 <link rel="stylesheet" href="assets/app.css?v=<?= e(KINDERARBEIT) ?>">
 <style>:root { --accent: <?= e($accent) ?>; --accent-text: <?= e(contrast_color($accent)) ?>; }</style>
 </head>
