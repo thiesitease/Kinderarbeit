@@ -156,7 +156,8 @@ a:hover { color: color-mix(in srgb, var(--accent-ink) 75%, var(--text)); }
 
 /* --- Grundgeruest ---------------------------------------------------------- */
 
-.shell { min-height: 100dvh; display: flex; flex-direction: column; }
+/* 100vh zuerst: dvh versteht Safari erst ab 15.4. */
+.shell { min-height: 100vh; min-height: 100dvh; display: flex; flex-direction: column; }
 
 .topbar {
   position: sticky; top: 0; z-index: 30;
@@ -591,7 +592,7 @@ a:hover { color: color-mix(in srgb, var(--accent-ink) 75%, var(--text)); }
 
 /* --- Anmeldung -------------------------------------------------------------- */
 
-.auth { min-height: 100dvh; display: grid; place-items: center; padding: 1.5rem 1rem 3rem; }
+.auth { min-height: 100vh; min-height: 100dvh; display: grid; place-items: center; padding: 1.5rem 1rem 3rem; }
 .auth__inner { width: 100%; max-width: 30rem; }
 .auth__head { text-align: center; margin-bottom: 1.4rem; }
 .auth__logo {
