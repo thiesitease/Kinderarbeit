@@ -70,6 +70,57 @@ $isCurrentMonth = $month === current_month();
   </div>
 </section>
 
+<?php if ($expenses): ?>
+  <?php
+  // Nur zaehlen, was schon laeuft. Eine Ausgabe, die erst naechsten Monat
+  // beginnt, steht in der Liste - aber sie geht diesen Monat noch nicht ab,
+  // und die Summe soll nicht mehr behaupten, als stimmt.
+  $monatlich = 0;
+  foreach ($expenses as $expense) {
+      if ($expense['start_month'] <= current_month()) {
+          $monatlich += (int)$expense['amount_cents'];
+      }
+  }
+  ?>
+  <section class="section">
+    <div class="section__head">
+      <h2>Was jeden Monat abgeht</h2>
+      <span class="section__hint">zurzeit <?= e(Money::format(-$monatlich)) ?> im Monat</span>
+    </div>
+
+    <div class="card">
+      <ul class="list">
+        <?php foreach ($expenses as $expense): ?>
+          <li>
+            <div class="entry" style="padding-left:0;padding-right:0">
+              <div class="entry__icon" aria-hidden="true"><?= e($expense['emoji']) ?></div>
+              <div class="entry__body">
+                <div class="entry__title"><?= e($expense['title']) ?></div>
+                <div class="entry__meta">
+                  jeden <?= (int)$expense['day_of_month'] ?>. im Monat<?php
+                  if ($expense['start_month'] > current_month()) {
+                      echo ' · erst ab ' . e(month_label((string)$expense['start_month']));
+                  }
+                  if (!empty($expense['end_month'])) {
+                      echo ' · noch bis ' . e(month_label((string)$expense['end_month']));
+                  }
+                  ?>
+                </div>
+              </div>
+              <div class="entry__amount value-negative"><?= e(Money::format(-(int)$expense['amount_cents'])) ?></div>
+            </div>
+          </li>
+        <?php endforeach; ?>
+      </ul>
+
+      <p class="field__hint mt-1">
+        Das wird jeden Monat automatisch abgezogen – du musst nichts tun. Ändern
+        können das nur Mama und Papa; stimmt etwas nicht, sag ihnen Bescheid.
+      </p>
+    </div>
+  </section>
+<?php endif; ?>
+
 <section class="section">
   <div class="section__head">
     <h2>Alle Buchungen</h2>

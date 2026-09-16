@@ -164,7 +164,9 @@ $rest = $summary['net'];
     </div>
 
     <?php if ($expenses): ?>
-      <p class="small muted mt-2 mb-1">Jeden Monat gehen automatisch ab:</p>
+      <p class="small muted mt-2 mb-1">
+        Jeden Monat gehen automatisch ab – ändern können das nur Mama und Papa:
+      </p>
       <ul class="list">
         <?php foreach ($expenses as $expense): ?>
           <li>

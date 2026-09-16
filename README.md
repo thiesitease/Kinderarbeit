@@ -14,7 +14,7 @@ vollständige Historie und der Restbetrag pro Monat.
 |---|---|---|
 | Anmeldung | alle | Profil antippen und PIN eingeben – oder persönlichen Zugangslink öffnen |
 | Aufgaben | Kinder | offene Aufgaben sehen und als erledigt melden |
-| Mein Konto | Kinder | Guthaben, Monatsübersicht, alle Buchungen |
+| Mein Konto | Kinder | Guthaben, Monatsübersicht, laufende feste Ausgaben, alle Buchungen |
 | Verlauf | Kinder | eigene Meldungen mit Status |
 | Übersicht | Eltern | **Wiedervorlage**: melden bestätigen oder ablehnen |
 | Aufgaben | Eltern | Aufgaben anlegen, Betrag festlegen, zuweisen, pausieren |
@@ -43,7 +43,7 @@ gehört ausdrücklich nicht zur Anwendung).
 | | |
 |---|---|
 | <img src="docs/bilder/03-kind-aufgaben.png" width="380"><br>**Was du machen kannst.** Oben das Guthaben, darunter alle offenen Aufgaben mit Betrag. Ein Tipp auf „Erledigt ✓“ meldet sie den Eltern – gemeldete Aufgaben sind ausgegraut und warten. | <img src="docs/bilder/04-kind-bescheid.png" width="380"><br>**Bescheid sagen.** Wartet etwas auf Bestätigung, kann das Kind Mama oder Papa mit einem Tipp per WhatsApp erinnern. Der Text ist fertig vorbereitet, abgeschickt wird von Hand. |
-| <img src="docs/bilder/05-kind-monat.png" width="380"><br>**Der Monat auf einen Blick.** Verdient, feste Ausgaben, ausgezahlt – und der **Rest im Monat**. Die vier Kacheln gehen immer auf; darunter steht, was automatisch abgeht. | <img src="docs/bilder/06-kind-konto.png" width="380"><br>**Mein Konto.** Jede einzelne Buchung, neueste zuerst, mit Datum und Herkunft. Eine zurückgenommene Bestätigung steht als eigene Gegenbuchung drin; was die Eltern nachträglich ändern, ist als „geändert“ gekennzeichnet. |
+| <img src="docs/bilder/05-kind-monat.png" width="380"><br>**Der Monat auf einen Blick.** Verdient, feste Ausgaben, ausgezahlt – und der **Rest im Monat**. Die vier Kacheln gehen immer auf; darunter steht, was automatisch abgeht. | <img src="docs/bilder/06-kind-konto.png" width="380"><br>**Mein Konto.** Oben, was jeden Monat fest abgeht – zum Nachlesen, nicht zum Ändern. Darunter jede einzelne Buchung, neueste zuerst, mit Datum und Herkunft. Eine zurückgenommene Bestätigung steht als eigene Gegenbuchung drin; was die Eltern nachträglich ändern, ist als „geändert“ gekennzeichnet. |
 | <img src="docs/bilder/07-kind-verlauf.png" width="380"><br>**Mein Verlauf.** Alle gemeldeten Aufgaben mit ihrem Stand: wartet, bestätigt oder abgelehnt – samt Uhrzeit und dem Elternteil, das entschieden hat. | <img src="docs/bilder/08-benachrichtigungen.png" width="380"><br>**Benachrichtigungen einschalten.** Pro Gerät ein Tipp. Danach meldet sich das Handy, sobald eine Aufgabe bestätigt ist oder es etwas Neues zu tun gibt – auch bei geschlossener Seite. |
 
 ### Für die Eltern
@@ -250,6 +250,15 @@ wird automatisch abgebucht. Weil auf einfachem Webhosting nicht immer ein
 Cronjob zur Verfügung steht, prüft die Anwendung das beim ersten
 Seitenaufruf des Tages und holt auch zurückliegende Monate nach.
 Ein eindeutiger Schlüssel über Ausgabe und Monat schließt Doppelbuchungen aus.
+
+**Die Kinder sehen ihre eigenen festen Ausgaben** – auf der Startseite und
+unter *Mein Konto*, mit Betrag, Buchungstag und Monatssumme. Ändern können sie
+dort nichts; anlegen, bearbeiten und pausieren bleibt bei den Eltern.
+
+Angezeigt wird nur, was wirklich noch läuft: pausierte Ausgaben und solche,
+deren Endmonat vorbei ist, fallen aus der Liste und aus der Monatssumme heraus –
+genau wie bei der automatischen Abbuchung. Eine Ausgabe, die erst später
+beginnt, steht mit „erst ab …“ dabei und zählt noch nicht mit.
 
 Ein Cronjob wird dafür **nicht gebraucht**. Wer trotzdem einen will, nutzt das
 Cronjob-Feature des Hosters – eigene `crontab`-Einträge sind bei manitu

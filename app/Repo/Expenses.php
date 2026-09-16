@@ -21,7 +21,15 @@ final class Expenses
         return $stmt->fetch() ?: null;
     }
 
-    public static function all(?int $childId = null, bool $onlyActive = false): array
+    /**
+     * Feste Ausgaben auflisten.
+     *
+     * $onlyRunning laesst weg, was zurzeit nicht mehr laeuft: pausierte und
+     * solche, deren Endmonat vorbei ist. Ohne die zweite Bedingung stuende
+     * eine ausgelaufene Ausgabe beim Kind weiter als laufende Belastung da -
+     * Billing::run() bucht sie laengst nicht mehr ab.
+     */
+    public static function all(?int $childId = null, bool $onlyRunning = false): array
     {
         $sql = 'SELECT e.*, u.name AS child_name, u.emoji AS child_emoji, u.color AS child_color
                   FROM expenses e
@@ -33,8 +41,9 @@ final class Expenses
             $sql .= ' AND e.child_id = :child';
             $params['child'] = $childId;
         }
-        if ($onlyActive) {
-            $sql .= ' AND e.is_active = 1';
+        if ($onlyRunning) {
+            $sql .= ' AND e.is_active = 1 AND (e.end_month IS NULL OR e.end_month >= :monat)';
+            $params['monat'] = current_month();
         }
         $sql .= ' ORDER BY e.is_active DESC, u.sort_order, e.day_of_month, e.title';
 
@@ -43,23 +52,29 @@ final class Expenses
         return $stmt->fetchAll();
     }
 
-    /** Summe der aktiven monatlichen Ausgaben eines Kindes. */
+    /** Summe der monatlichen Belastung eines Kindes - nur was noch laeuft. */
     public static function monthlyTotal(int $childId): int
     {
         $stmt = Database::pdo()->prepare(
-            'SELECT COALESCE(SUM(amount_cents), 0) FROM expenses WHERE child_id = :child AND is_active = 1'
+            'SELECT COALESCE(SUM(amount_cents), 0) FROM expenses
+              WHERE child_id = :child AND is_active = 1
+                AND (end_month IS NULL OR end_month >= :monat)'
         );
-        $stmt->execute(['child' => $childId]);
+        $stmt->execute(['child' => $childId, 'monat' => current_month()]);
         return (int)$stmt->fetchColumn();
     }
 
     /** Monatliche Belastung aller Kinder als id => Cent. */
     public static function monthlyTotals(): array
     {
-        $rows = Database::pdo()->query(
+        $stmt = Database::pdo()->prepare(
             'SELECT child_id, COALESCE(SUM(amount_cents), 0) AS total
-               FROM expenses WHERE is_active = 1 GROUP BY child_id'
-        )->fetchAll();
+               FROM expenses
+              WHERE is_active = 1 AND (end_month IS NULL OR end_month >= :monat)
+              GROUP BY child_id'
+        );
+        $stmt->execute(['monat' => current_month()]);
+        $rows = $stmt->fetchAll();
 
         $totals = [];
         foreach ($rows as $row) {

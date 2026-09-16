@@ -143,6 +143,51 @@ check(
 
 Expenses::setActive($expenseId, false);
 check('Pausierte Ausgabe bucht nicht', Billing::run(true), 0);
+check('Pausierte zaehlt nicht mehr mit', Expenses::monthlyTotal($childId), 0);
+Expenses::setActive($expenseId, true);
+
+echo "\nWas die Kinder als laufend sehen\n";
+
+// Billing::run() hoert beim Endmonat auf. Was die Kinder angezeigt bekommen,
+// muss dasselbe sagen - sonst stuende dort eine Belastung, die es nicht gibt.
+$laufend = static fn (): array => array_column(Expenses::all($childId, true), 'title');
+
+$abgelaufen = Expenses::create([
+    'child_id'     => $childId,
+    'title'        => 'Schwimmkurs',
+    'amount_cents' => 800,
+    'day_of_month' => 10,
+    'start_month'  => month_shift(current_month(), -4),
+    'end_month'    => month_shift(current_month(), -1),
+    'created_by'   => (int)$thies['id'],
+]);
+check('Ausgelaufene taucht nicht auf',  in_array('Schwimmkurs', $laufend(), true), false);
+check('Und zaehlt nicht zur Belastung', Expenses::monthlyTotal($childId), 1990);
+check('Auch nicht in der Gesamtliste',  Expenses::monthlyTotals()[$childId] ?? 0, 1990);
+check('Die Eltern sehen sie weiterhin',
+      in_array('Schwimmkurs', array_column(Expenses::all($childId), 'title'), true), true);
+
+// Genau im Endmonat laeuft sie noch - Billing bucht diesen Monat noch ab.
+Expenses::update($abgelaufen, [
+    'child_id' => $childId, 'title' => 'Schwimmkurs', 'emoji' => '🏊',
+    'amount_cents' => 800, 'day_of_month' => 10, 'end_month' => current_month(),
+]);
+check('Im Endmonat laeuft sie noch',    in_array('Schwimmkurs', $laufend(), true), true);
+check('Und zaehlt wieder mit',          Expenses::monthlyTotal($childId), 1990 + 800);
+
+$kuenftig = Expenses::create([
+    'child_id'     => $childId,
+    'title'        => 'Reitstunde',
+    'amount_cents' => 2200,
+    'day_of_month' => 15,
+    'start_month'  => month_shift(current_month(), 1),
+    'created_by'   => (int)$thies['id'],
+]);
+check('Kuenftige steht schon in der Liste', in_array('Reitstunde', $laufend(), true), true);
+
+$pdo->prepare('DELETE FROM expenses WHERE id IN (:a, :b)')
+    ->execute(['a' => $abgelaufen, 'b' => $kuenftig]);
+Expenses::setActive($expenseId, false);
 
 echo "\nAuszahlungen und Historie\n";
 Ledger::book($childId, -300, 'Bar ausgezahlt', 'payout', 'manual', null, (int)$thies['id']);

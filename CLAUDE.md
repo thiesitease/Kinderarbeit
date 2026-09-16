@@ -131,6 +131,16 @@ bei jeder Veröffentlichung.
 `is_https()` steht in `helpers.php` und nicht in der `bootstrap.php`: `base_url()`
 und die Cookies brauchen es, und die Werkzeuge in `bin/` laden nur die Helfer.
 
+**„Laufend“ heisst nicht „aktiv“.** `Expenses::all($kind, true)` und
+`monthlyTotal(s)` lassen nicht nur pausierte Ausgaben weg, sondern auch solche,
+deren `end_month` vorbei ist – genauso wie `Billing::dueMonths()` aufhört zu
+buchen. Ohne diese zweite Bedingung stünde beim Kind eine Belastung, die es
+längst nicht mehr gibt. Die Eltern sehen unter *Ausgaben* weiterhin alles,
+denn sie verwalten es.
+
+Kinder sehen ihre festen Ausgaben nur lesend (Startseite und *Mein Konto*);
+alle Routen zum Ändern liegen hinter `Auth::requireParent()`.
+
 **Routing ohne mod_rewrite.** Alles läuft über `?p=seite` in `index.php`. Links werden
 mit `url()` gebaut. Bewusst so, damit die Anwendung auf jedem Webhosting läuft.
 
