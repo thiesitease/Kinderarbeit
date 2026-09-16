@@ -57,9 +57,30 @@
     window.setTimeout(function () {
       form.querySelectorAll('button[type="submit"]').forEach(function (button) {
         button.disabled = true;
-        if (button.dataset.busyLabel) button.textContent = button.dataset.busyLabel;
+        if (button.dataset.busyLabel) {
+          if (button.dataset.labelVorher === undefined) {
+            button.dataset.labelVorher = button.textContent;
+          }
+          button.textContent = button.dataset.busyLabel;
+        }
       });
     }, 0);
+  });
+
+  /* --- ... aber nicht für immer -------------------------------------------
+     Wer nach dem Abschicken zurückgeht, bekommt die Seite so wieder, wie er
+     sie verlassen hat - mit dem abgeschalteten Knopf. Das Formular ist dann
+     tot, und es sieht aus, als hinge die Seite. Beim Zurückholen aus dem
+     Verlauf also alles wieder freigeben. */
+  window.addEventListener('pageshow', function (event) {
+    if (!event.persisted) return;
+
+    document.querySelectorAll('form button[type="submit"][disabled]').forEach(function (button) {
+      button.disabled = false;
+      if (button.dataset.labelVorher !== undefined) {
+        button.textContent = button.dataset.labelVorher;
+      }
+    });
   });
 
   /* --- Zugangslink in die Zwischenablage kopieren ------------------------- */
