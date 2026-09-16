@@ -5,7 +5,8 @@
 
 :root {
   --accent: #1c7ed6;
-  --accent-soft: color-mix(in srgb, var(--accent) 12%, transparent);
+  /* Rückfall für Browser ohne color-mix(), siehe @supports weiter unten. */
+  --accent-soft: var(--surface-2);
   --accent-text: #ffffff;
   /* Akzentfarbe fuer Text und Links – im dunklen Design aufgehellt,
      damit auch dunkle Profilfarben lesbar bleiben. */
@@ -51,7 +52,7 @@
   --dark-text: #f2eee7;
   --dark-muted: #a79f93;
   --dark-faint: #7d7668;
-  --dark-accent-ink: color-mix(in srgb, var(--accent) 45%, #ffffff);
+  --dark-accent-ink: var(--dark-text);
   --dark-on-positive: #08240f;
   --dark-positive: #6bcb7f;
   --dark-positive-soft: #17301d;
@@ -110,6 +111,17 @@
   color-scheme: dark;
 }
 
+/* Die beiden Farben entstehen aus der Profilfarbe und brauchen color-mix().
+   Eine eigene Eigenschaft fällt nicht schon beim Einlesen aus, sondern erst
+   dort, wo sie benutzt wird - ein davorgestellter Rückfall würde also
+   überschrieben. Deshalb hier und nicht oben. */
+@supports (color: color-mix(in srgb, red, blue)) {
+  :root {
+    --accent-soft: color-mix(in srgb, var(--accent) 12%, transparent);
+    --dark-accent-ink: color-mix(in srgb, var(--accent) 45%, #ffffff);
+  }
+}
+
 *, *::before, *::after { box-sizing: border-box; }
 
 html { -webkit-text-size-adjust: 100%; }
@@ -148,7 +160,13 @@ a:hover { color: color-mix(in srgb, var(--accent-ink) 75%, var(--text)); }
 
 .topbar {
   position: sticky; top: 0; z-index: 30;
+  /* Rückfall zuerst. Safari kann color-mix() erst ab 16.2; ohne diese Zeile
+     steht die Leiste auf älteren Geräten ganz ohne Hintergrund da und der
+     Inhalt scrollt sichtbar durch sie hindurch. */
+  background: var(--surface);
   background: color-mix(in srgb, var(--surface) 88%, transparent);
+  /* Unpräfigiert versteht Safari das erst ab 18. */
+  -webkit-backdrop-filter: saturate(1.4) blur(12px);
   backdrop-filter: saturate(1.4) blur(12px);
   border-bottom: 1px solid var(--border);
 }
@@ -300,7 +318,7 @@ a:hover { color: color-mix(in srgb, var(--accent-ink) 75%, var(--text)); }
   font-size: 1.25rem; font-weight: 700; letter-spacing: -.02em;
   font-variant-numeric: tabular-nums; margin-top: .1rem;
 }
-.stat--rest { background: var(--accent-soft); border-color: color-mix(in srgb, var(--accent) 30%, transparent); }
+.stat--rest { background: var(--accent-soft); border-color: var(--border-strong); border-color: color-mix(in srgb, var(--accent) 30%, transparent); }
 .stat--wide { grid-column: 1 / -1; }
 .stat--rest .stat__value { color: color-mix(in srgb, var(--accent-ink) 80%, var(--text)); }
 .value-positive { color: var(--positive); }

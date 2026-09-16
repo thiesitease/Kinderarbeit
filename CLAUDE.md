@@ -182,6 +182,22 @@ Anwendung. Er speichert bewusst nichts zwischen – die Seiten ändern sich mit 
 Bestätigung, ein Zwischenspeicher zeigte veraltete Kontostände. Die `.htaccess`
 nimmt ihn deshalb vom Zwischenspeichern aus.
 
+**Die Familie hat ein älteres iPad.** Deshalb gilt für neuere CSS-Funktionen:
+erst ein Rückfall, dann die schöne Fassung. Safari kann `color-mix()` erst ab
+16.2 und `backdrop-filter` unpräfigiert erst ab 18. Ohne Rückfall stand die
+`.topbar` auf dem Gerät **ganz ohne Hintergrund** da und der Inhalt scrollte
+sichtbar hindurch – der einzige echte Schaden; Rahmen und Hover-Farben fallen
+dagegen brauchbar zurück.
+
+Eigene Eigenschaften (`--accent-soft`, `--dark-accent-ink`) brauchen dafür
+`@supports`: sie fallen nicht schon beim Einlesen aus, sondern erst dort, wo
+sie benutzt werden – ein davorgestellter Rückfall würde also überschrieben.
+
+Prüfen lässt sich das, indem man aus einer Kopie des Stylesheets alle
+Deklarationen mit `color-mix` und den `@supports`-Block entfernt und die Seiten
+damit rendert. **Erst die Kommentare entfernen** – sonst trifft der Filter auch
+Prosa, in der „color-mix“ vorkommt, und zerlegt die Regel drumherum.
+
 **`[hidden]` braucht `!important`.** Die Browser-Regel `[hidden] { display: none }`
 verliert gegen jede eigene Regel mit `display` – etwa `.row { display: flex }`.
 In `assets/app.css` steht deshalb ganz bewusst `[hidden] { display: none !important }`.
