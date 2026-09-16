@@ -116,6 +116,8 @@ final class Database
             title         TEXT    NOT NULL,
             emoji         TEXT    NOT NULL DEFAULT '⭐',
             amount_cents  INTEGER NOT NULL,
+            base_cents    INTEGER,
+            stars         INTEGER NOT NULL DEFAULT 0,
             status        TEXT    NOT NULL DEFAULT 'pending' CHECK (status IN ('pending','approved','rejected')),
             note          TEXT    NOT NULL DEFAULT '',
             created_at    TEXT    NOT NULL,
@@ -210,6 +212,11 @@ final class Database
         self::addColumn($pdo, 'users', 'token_created_at', 'TEXT');
         self::addColumn($pdo, 'users', 'token_used_at', 'TEXT');
         self::addColumn($pdo, 'users', 'phone', 'TEXT');
+        // Sterne des Kindes und der Betrag vor einem Zuschlag. amount_cents
+        // bleibt ueberall "was gutgeschrieben wurde" - daran haengen Ruecknahme
+        // und Bearbeiten; der Grundbetrag steht deshalb daneben.
+        self::addColumn($pdo, 'completions', 'base_cents', 'INTEGER');
+        self::addColumn($pdo, 'completions', 'stars', 'INTEGER NOT NULL DEFAULT 0');
         self::addColumn($pdo, 'ledger', 'updated_by', 'INTEGER');
         self::addColumn($pdo, 'ledger', 'updated_at', 'TEXT');
 

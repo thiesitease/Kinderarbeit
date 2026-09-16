@@ -93,6 +93,15 @@ console.log('Kinderbereich');
   await anmelden(p, 1, '7788');
   await schuss(p, '03-kind-aufgaben');
 
+  // „War es besonders schwer?“ aufgeklappt – die Sterne, die das Kind setzt.
+  // Gemeldete Aufgaben haben die Auswahl nicht mehr, deshalb :has(.reveal).
+  const offen = p.locator('.tasks .task:has(.reveal)').first();
+  if (await offen.count()) {
+    await offen.locator('.reveal summary').click();
+    await offen.locator('.segmented--sterne label').nth(2).click();
+  }
+  await schuss(p, '03b-kind-sterne', { zu: '.tasks' });
+
   // Das Kind erinnert Mama oder Papa an die offenen Meldungen.
   await schuss(p, '04-kind-bescheid', { zu: '.card:has(.btn--whatsapp)' });
 
@@ -114,6 +123,16 @@ console.log('Elternbereich');
   const c = await neu(); const p = await c.newPage();
   await anmelden(p, 5, '8642');
   await schuss(p, '09-eltern-wiedervorlage');
+
+  // Der Regler auf dem doppelten Betrag – so sieht ein Zuschlag aus.
+  const regler = p.locator('.review .zuschlag input[name=faktor]').first();
+  if (await regler.count()) {
+    await regler.evaluate(el => {
+      el.value = '20';
+      el.dispatchEvent(new Event('input', { bubbles: true }));
+    });
+  }
+  await schuss(p, '09b-eltern-zuschlag', { zu: '.review:has(.zuschlag)' });
   await schuss(p, '10-eltern-konten', { zu: '.section:has(.grid-2)' });
 
   // Ein Kind mit hinterlegter Handynummer, damit danach auch das

@@ -44,7 +44,12 @@ $rest = $summary['net'];
     <div class="tasks">
       <?php foreach ($tasks as $task): ?>
         <?php $waiting = isset($pendingTaskIds[(int)$task['id']]); ?>
-        <article class="task<?= $waiting ? ' task--waiting' : '' ?>">
+        <?php
+        // Die ganze Zeile ist das Formular. Nur so stehen die Sterne im
+        // Textteil und der Knopf daneben im selben Formular - ein
+        // verschachteltes Formular gaebe es sonst nicht.
+        $taskId = (int)$task['id'];
+        $inhalt = static function () use ($task, $waiting, $taskId): void { ?>
           <div class="task__icon" aria-hidden="true"><?= e($task['emoji']) ?></div>
           <div class="task__body">
             <div class="task__title"><?= e($task['title']) ?></div>
@@ -58,21 +63,43 @@ $rest = $summary['net'];
             <?php elseif (!empty($task['last_approved_at'])): ?>
               <div class="task__note">Zuletzt: <?= e(format_date($task['last_approved_at'])) ?></div>
             <?php endif; ?>
+
+            <?php if (!$waiting): ?>
+              <details class="reveal">
+                <summary>War es besonders schwer?</summary>
+                <div class="segmented segmented--sterne mt-1">
+                  <?php foreach ([0 => 'nein', 1 => '⭐', 2 => '⭐⭐', 3 => '⭐⭐⭐'] as $wert => $text): ?>
+                    <input type="radio" id="stern-<?= $taskId ?>-<?= $wert ?>" name="sterne"
+                           value="<?= $wert ?>"<?= $wert === 0 ? ' checked' : '' ?>>
+                    <label for="stern-<?= $taskId ?>-<?= $wert ?>"><?= $text ?></label>
+                  <?php endforeach; ?>
+                </div>
+                <p class="task__note mt-1">
+                  Mama und Papa sehen das beim Bestätigen und können dann mehr geben.
+                </p>
+              </details>
+            <?php endif; ?>
           </div>
           <div class="task__side">
             <span class="task__amount"><?= e(Money::format((int)$task['amount_cents'])) ?></span>
             <?php if ($waiting): ?>
               <button class="btn btn--sm" type="button" disabled>Gemeldet</button>
             <?php else: ?>
-              <form method="post" action="<?= e(url('kind-erledigt')) ?>" class="inline-form"
-                    data-confirm="„<?= e($task['title']) ?>“ als erledigt melden?">
-                <?= Csrf::field() ?>
-                <input type="hidden" name="task" value="<?= (int)$task['id'] ?>">
-                <button class="btn btn--done" type="submit" data-busy-label="…">Erledigt ✓</button>
-              </form>
+              <button class="btn btn--done" type="submit" data-busy-label="…">Erledigt ✓</button>
             <?php endif; ?>
           </div>
-        </article>
+        <?php };
+        ?>
+        <?php if ($waiting): ?>
+          <article class="task task--waiting"><?php $inhalt(); ?></article>
+        <?php else: ?>
+          <form method="post" action="<?= e(url('kind-erledigt')) ?>" class="task"
+                data-confirm="„<?= e($task['title']) ?>“ als erledigt melden?">
+            <?= Csrf::field() ?>
+            <input type="hidden" name="task" value="<?= $taskId ?>">
+            <?php $inhalt(); ?>
+          </form>
+        <?php endif; ?>
       <?php endforeach; ?>
     </div>
   <?php endif; ?>
@@ -92,7 +119,12 @@ $rest = $summary['net'];
               <div class="entry__icon" aria-hidden="true"><?= e($item['emoji']) ?></div>
               <div class="entry__body">
                 <div class="entry__title"><?= e($item['title']) ?></div>
-                <div class="entry__meta">Gemeldet <?= e(format_datetime($item['created_at'])) ?></div>
+                <div class="entry__meta">
+                  Gemeldet <?= e(format_datetime($item['created_at'])) ?>
+                  <?php if (Completions::starLabel($item) !== ''): ?>
+                    · <?= Completions::starLabel($item) ?> war schwer
+                  <?php endif; ?>
+                </div>
               </div>
               <div class="entry__amount"><?= e(Money::format((int)$item['amount_cents'])) ?></div>
             </div>

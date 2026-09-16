@@ -51,25 +51,30 @@ $birgitta = Users::findByName('Birgitta');
 $thies   = Users::findByName('Thies');
 
 /** Eine Meldung mit frei waehlbarem Zeitpunkt einstellen. */
-$submitAt = static function (int $taskId, array $child, string $when): int {
+$submitAt = static function (int $taskId, array $child, string $when, int $stars = 0): int {
     $task = Tasks::find($taskId);
     $pdo  = Database::pdo();
     $pdo->prepare(
-        'INSERT INTO completions (task_id, child_id, title, emoji, amount_cents, status, note, created_at)
-         VALUES (:task, :child, :title, :emoji, :amount, \'pending\', \'\', :created)'
+        'INSERT INTO completions (task_id, child_id, title, emoji, amount_cents, base_cents, stars, status, note, created_at)
+         VALUES (:task, :child, :title, :emoji, :amount, :amount, :stars, \'pending\', \'\', :created)'
     )->execute([
         'task'   => $taskId,
         'child'  => (int)$child['id'],
         'title'  => $task['title'],
         'emoji'  => $task['emoji'],
         'amount' => (int)$task['amount_cents'],
+        'stars'  => $stars,
         'created'=> $when,
     ]);
     return (int)$pdo->lastInsertId();
 };
 
-/** Eine Meldung bestaetigen und dabei den Buchungszeitpunkt setzen. */
-$approveAt = static function (int $completionId, array $parent, string $when): void {
+/**
+ * Eine Meldung bestaetigen und dabei den Buchungszeitpunkt setzen.
+ * $faktor sind Zehntel wie in der Anwendung: 10 ist der volle Betrag ohne
+ * Zuschlag, 20 der doppelte.
+ */
+$approveAt = static function (int $completionId, array $parent, string $when, int $faktor = Completions::FAKTOR_MIN): void {
     $pdo = Database::pdo();
     $pdo->prepare(
         "UPDATE completions SET status = 'approved', decided_by = :p, decided_at = :when WHERE id = :id"
@@ -79,10 +84,19 @@ $approveAt = static function (int $completionId, array $parent, string $when): v
     $row->execute(['id' => $completionId]);
     $completion = $row->fetch();
 
+    $grund  = Completions::baseAmount($completion);
+    $betrag = Completions::withFactor($grund, $faktor);
+    if ($betrag !== (int)$completion['amount_cents']) {
+        $pdo->prepare('UPDATE completions SET amount_cents = :amount WHERE id = :id')
+            ->execute(['amount' => $betrag, 'id' => $completionId]);
+    }
+
     Ledger::book(
         (int)$completion['child_id'],
-        (int)$completion['amount_cents'],
-        $completion['title'],
+        $betrag,
+        $betrag > $grund
+            ? $completion['title'] . ' (×' . Money::factorLabel($faktor) . ')'
+            : $completion['title'],
         'task',
         'completion',
         $completionId,
@@ -157,6 +171,10 @@ foreach ($history as [$taskId, $child, $daysAgo, $parent]) {
     $approveAt($id, $parent, date('Y-m-d H:i:s', $decidedAt));
 }
 
+// --- Eine schwere Aufgabe, für die es einen Zuschlag gab ------------------------
+$schwer = $submitAt(6, $emilius, $day(6, '11:05:00'), 3);
+$approveAt($schwer, $birgitta, $day(6, '19:40:00'), 20);
+
 // --- Eine abgelehnte Meldung --------------------------------------------------
 $rejected = $submitAt(2, $julius, $day(13, '17:10:00'));
 $pdo->prepare(
@@ -165,9 +183,9 @@ $pdo->prepare(
 )->execute(['p' => (int)$thies['id'], 'when' => $day(13, '19:05:00'), 'id' => $rejected]);
 
 // --- Offene Meldungen für die Wiedervorlage -----------------------------------
-$submitAt(1, $emilius, $day(0, '15:20:00'));
+$submitAt(1, $emilius, $day(0, '15:20:00'), 2);
 $submitAt(3, $julius,  $day(0, '17:45:00'));
-$submitAt(8, $bruno,   $day(1, '07:30:00'));
+$submitAt(8, $bruno,   $day(1, '07:30:00'), 3);
 $submitAt(4, $julius,  $day(1, '18:15:00'));
 
 // --- Auszahlungen und ein Bonus ------------------------------------------------

@@ -37,6 +37,21 @@ $icons  = ['pending' => '⏳', 'approved' => '✅', 'rejected' => '✖️'];
               <?php if (!empty($item['decision_note'])): ?>
                 <div class="entry__meta">💬 <?= e($item['decision_note']) ?></div>
               <?php endif; ?>
+              <?php
+              // Die Sterne, die das Kind gesetzt hat – und was daraus wurde.
+              $sterne   = Completions::starLabel($item);
+              $zuschlag = Completions::surcharge($item);
+              ?>
+              <?php if ($sterne !== '' || $zuschlag > 0): ?>
+                <div class="entry__meta">
+                  <?php if ($sterne !== ''): ?><?= $sterne ?> war schwer<?php endif; ?>
+                  <?php if ($zuschlag > 0): ?>
+                    <?= $sterne !== '' ? '·' : '' ?>
+                    Zuschlag <?= e(Money::format(Completions::baseAmount($item))) ?>
+                    → <?= e(Money::format((int)$item['amount_cents'])) ?>
+                  <?php endif; ?>
+                </div>
+              <?php endif; ?>
             </div>
             <div style="text-align:right">
               <div class="entry__amount <?= $status === 'approved' ? 'value-positive' : ($status === 'rejected' ? 'muted' : '') ?>">

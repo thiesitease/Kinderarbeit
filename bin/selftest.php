@@ -702,6 +702,79 @@ $stmt->execute(['id' => $expenseId, 'month' => current_month()]);
 check('Merker ohne Buchung',          $stmt->fetchColumn(), null);
 
 
+echo "\nSterne und Zuschlag\n";
+check('Faktor 10 heisst "1"',         Money::factorLabel(10), '1');
+check('Faktor 13 heisst "1,3"',       Money::factorLabel(13), '1,3');
+check('Faktor 15 heisst "1,5"',       Money::factorLabel(15), '1,5');
+check('Faktor 20 heisst "2"',         Money::factorLabel(20), '2');
+check('Faktor 25 heisst "2,5"',       Money::factorLabel(25), '2,5');
+check('Faktor 30 heisst "3"',         Money::factorLabel(30), '3');
+
+check('50 Cent mal 1',                Completions::withFactor(50, 10), 50);
+check('50 Cent mal 1,5',              Completions::withFactor(50, 15), 75);
+check('50 Cent mal 2',                Completions::withFactor(50, 20), 100);
+check('50 Cent mal 3',                Completions::withFactor(50, 30), 150);
+check('200 Cent mal 1,3',             Completions::withFactor(200, 13), 260);
+// 25 mal 1,5 sind 37,5 Cent – kaufmaennisch aufgerundet, ohne Fliesskomma.
+check('25 Cent mal 1,5 rundet auf',   Completions::withFactor(25, 15), 38);
+check('Faktor unter 1 wird gekappt',  Completions::withFactor(100, 3), 100);
+check('Faktor ueber 3 wird gekappt',  Completions::withFactor(100, 99), 300);
+
+check('Zeile ohne Sterne',            Completions::starLabel(['amount_cents' => 100]), '');
+check('Zeile ohne Grundbetrag',       Completions::baseAmount(['amount_cents' => 100]), 100);
+check('Kein Zuschlag ohne Grundbetrag', Completions::surcharge(['amount_cents' => 100]), 0);
+
+$balance = Ledger::balance($childId);
+$schwer  = Completions::submit(Tasks::find(1), $childId, '', 3);
+$row     = Completions::find($schwer);
+check('Sterne gespeichert',           (int)$row['stars'], 3);
+check('Sterne als Text',              Completions::starLabel($row), '⭐⭐⭐');
+check('Grundbetrag bei der Meldung',  Completions::baseAmount($row), 500);
+check('Noch kein Zuschlag',           Completions::surcharge($row), 0);
+
+$zuviel = Completions::submit(Tasks::find(2), $childId, '', 7);
+check('Mehr als drei Sterne gekappt', (int)Completions::find($zuviel)['stars'], 3);
+$zuwenig = Completions::submit(Tasks::find(3), $childId, '', -2);
+check('Weniger als null gekappt',     (int)Completions::find($zuwenig)['stars'], 0);
+Completions::reject($zuviel, (int)$thies['id']);
+Completions::reject($zuwenig, (int)$thies['id']);
+
+check('Bestaetigung mit Zuschlag',    Completions::approve($schwer, (int)$thies['id'], '', 20), true);
+$row = Completions::find($schwer);
+check('Gutgeschrieben wird der Zuschlag', (int)$row['amount_cents'], 1000);
+check('Grundbetrag bleibt stehen',    Completions::baseAmount($row), 500);
+check('Zuschlag ergibt sich',         Completions::surcharge($row), 500);
+check('Guthaben mit Zuschlag',        Ledger::balance($childId), $balance + 1000);
+
+$zuschlagsBuchung = Ledger::find($ledgerFor($schwer, 'task'));
+check('Buchung nennt den Faktor',     str_contains((string)$zuschlagsBuchung['description'], '(×2)'), true);
+check('Buchung zaehlt als Aufgabe',   (string)$zuschlagsBuchung['category'], 'task');
+
+// Eine geaenderte Buchung zieht amount_cents mit – der Zuschlag ergibt sich
+// danach aus dem neuen Betrag, weil er nirgends gespeichert ist.
+Ledger::update((int)$zuschlagsBuchung['id'], [
+    'child_id'     => $childId,
+    'amount_cents' => 800,
+    'description'  => (string)$zuschlagsBuchung['description'],
+    'category'     => 'task',
+    'booked_at'    => (string)$zuschlagsBuchung['booked_at'],
+], (int)$thies['id']);
+check('Meldung folgt der Korrektur',  (int)Completions::find($schwer)['amount_cents'], 800);
+check('Zuschlag rechnet sich neu',    Completions::surcharge(Completions::find($schwer)), 300);
+
+check('Ruecknahme mit Zuschlag',      Completions::revoke($schwer, (int)$thies['id']), true);
+check('Gegenbuchung gleicht genau aus', Ledger::balance($childId), $balance);
+
+// Ohne Sterne darf der Regler gar nicht erst erscheinen – der Server
+// verlaesst sich aber nicht darauf, sondern rechnet, was hereinkommt.
+$ohne = Completions::submit(Tasks::find(4), $childId);
+check('Meldung ohne Sterne',          (int)Completions::find($ohne)['stars'], 0);
+check('Bestaetigung ohne Faktor',     Completions::approve($ohne, (int)$thies['id']), true);
+check('Voller Betrag ohne Zuschlag',  (int)Completions::find($ohne)['amount_cents'], 200);
+check('Guthaben ohne Zuschlag',       Ledger::balance($childId), $balance + 200);
+check('Aufraeumen: zurueckgenommen',  Completions::revoke($ohne, (int)$thies['id']), true);
+check('Guthaben wieder am Ausgang',   Ledger::balance($childId), $balance);
+
 // Aufraeumen
 foreach (glob($tmp . '/*') ?: [] as $file) {
     @unlink($file);

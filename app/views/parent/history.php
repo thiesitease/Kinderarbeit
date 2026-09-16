@@ -142,6 +142,13 @@ foreach ($back as $key => $value) {
                   <?= $approved ? 'Bestätigt' : 'Abgelehnt' ?> von <?= e($item['decided_by_name'] ?? '–') ?>,
                   <?= e(format_datetime($item['decided_at'])) ?>
                   <?php if (!empty($item['decision_note'])): ?> · 💬 <?= e($item['decision_note']) ?><?php endif; ?>
+                  <?php if (Completions::starLabel($item) !== ''): ?>
+                    · <?= Completions::starLabel($item) ?>
+                  <?php endif; ?>
+                  <?php if (Completions::surcharge($item) > 0): ?>
+                    · Zuschlag <?= e(Money::format(Completions::baseAmount($item))) ?>
+                    → <?= e(Money::format((int)$item['amount_cents'])) ?>
+                  <?php endif; ?>
                 </div>
               </div>
               <div class="entry__amount <?= $approved ? 'value-positive' : 'muted' ?>">

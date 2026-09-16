@@ -13,10 +13,10 @@ vollständige Historie und der Restbetrag pro Monat.
 | Bereich | Wer | Was |
 |---|---|---|
 | Anmeldung | alle | Profil antippen und PIN eingeben – oder persönlichen Zugangslink öffnen |
-| Aufgaben | Kinder | offene Aufgaben sehen und als erledigt melden |
+| Aufgaben | Kinder | offene Aufgaben sehen und als erledigt melden – mit Sternen, wenn es schwer war |
 | Mein Konto | Kinder | Guthaben, Monatsübersicht, laufende feste Ausgaben, alle Buchungen |
 | Verlauf | Kinder | eigene Meldungen mit Status |
-| Übersicht | Eltern | **Wiedervorlage**: melden bestätigen oder ablehnen |
+| Übersicht | Eltern | **Wiedervorlage**: Meldungen bestätigen oder ablehnen, bei Sternen mit Zuschlag |
 | Aufgaben | Eltern | Aufgaben anlegen, Betrag festlegen, zuweisen, pausieren |
 | Kinder | Eltern | Konten im Vergleich, Detailseite je Kind |
 | Ausgaben | Eltern | regelmäßige monatliche Ausgaben je Kind |
@@ -45,6 +45,12 @@ gehört ausdrücklich nicht zur Anwendung).
 | <img src="docs/bilder/03-kind-aufgaben.png" width="380"><br>**Was du machen kannst.** Oben das Guthaben, darunter alle offenen Aufgaben mit Betrag. Ein Tipp auf „Erledigt ✓“ meldet sie den Eltern – gemeldete Aufgaben sind ausgegraut und warten. | <img src="docs/bilder/04-kind-bescheid.png" width="380"><br>**Bescheid sagen.** Wartet etwas auf Bestätigung, kann das Kind Mama oder Papa mit einem Tipp per WhatsApp erinnern. Der Text ist fertig vorbereitet, abgeschickt wird von Hand. |
 | <img src="docs/bilder/05-kind-monat.png" width="380"><br>**Der Monat auf einen Blick.** Verdient, feste Ausgaben, ausgezahlt – und der **Rest im Monat**. Die vier Kacheln gehen immer auf; darunter steht, was automatisch abgeht. | <img src="docs/bilder/06-kind-konto.png" width="380"><br>**Mein Konto.** Oben, was jeden Monat fest abgeht – zum Nachlesen, nicht zum Ändern. Darunter jede einzelne Buchung, neueste zuerst, mit Datum und Herkunft. Eine zurückgenommene Bestätigung steht als eigene Gegenbuchung drin; was die Eltern nachträglich ändern, ist als „geändert“ gekennzeichnet. |
 | <img src="docs/bilder/07-kind-verlauf.png" width="380"><br>**Mein Verlauf.** Alle gemeldeten Aufgaben mit ihrem Stand: wartet, bestätigt oder abgelehnt – samt Uhrzeit und dem Elternteil, das entschieden hat. | <img src="docs/bilder/08-benachrichtigungen.png" width="380"><br>**Benachrichtigungen einschalten.** Pro Gerät ein Tipp. Danach meldet sich das Handy, sobald eine Aufgabe bestätigt ist oder es etwas Neues zu tun gibt – auch bei geschlossener Seite. |
+
+### Sterne für schwere Aufgaben
+
+| | |
+|---|---|
+| <img src="docs/bilder/03b-kind-sterne.png" width="380"><br>**War es besonders schwer?** Beim Melden kann das Kind einen, zwei oder drei Sterne setzen. Die Auswahl ist eingeklappt – wer nichts sagen will, tippt einfach „Erledigt ✓“. | <img src="docs/bilder/09b-eltern-zuschlag.png" width="380"><br>**Die Eltern entscheiden.** Nur bei einer Meldung mit Sternen erscheint der Regler: vom einfachen bis zum dreifachen Betrag. Darunter steht sofort, was das ausmacht, und der Knopf nennt den Betrag, der gleich gutgeschrieben wird. |
 
 ### Für die Eltern
 
@@ -220,6 +226,33 @@ verdient + Bonus + Korrekturen − feste Ausgaben − Auszahlungen = Rest im Mon
 
 Das **Guthaben** ist der tatsächliche Kontostand über alle Monate hinweg,
 der **Rest im Monat** die Bilanz des gewählten Monats.
+
+## Sterne und Zuschlag
+
+Manche Aufgaben sind an manchen Tagen einfach schwerer – der Rasen nach zwei
+Wochen Regen, die Spülmaschine nach einem Geburtstag. Dafür gibt es Sterne.
+
+Beim Melden klappt das Kind **„War es besonders schwer?“** auf und wählt einen,
+zwei oder drei Sterne. Das ist freiwillig; ohne Auswahl bleibt alles wie vorher.
+Die Sterne allein ändern noch gar nichts – sie sind eine Bitte, keine Buchung.
+
+Die Eltern sehen sie in der Wiedervorlage und bekommen dort einen **Regler**
+zwischen dem einfachen und dem dreifachen Betrag. Darunter steht mit, was
+herauskommt („×2 · 1,00 € → 2,00 €“), und der Bestätigen-Knopf nennt denselben
+Betrag. Wer den Regler nicht anfasst, schreibt den normalen Betrag gut.
+
+Gutgeschrieben wird **eine** Buchung über den erhöhten Betrag; im Verwendungszweck
+steht der Faktor („Hühner füttern (×2)“). Dadurch verhält sich eine Aufgabe mit
+Zuschlag wie jede andere: Zurücknehmen bucht genau diesen Betrag gegen, Ändern
+und Löschen funktionieren unverändert.
+
+Im Verlauf – beim Kind wie bei den Eltern – stehen die Sterne und der Zuschlag
+dabei: „⭐⭐⭐ war schwer · Zuschlag 4,00 € → 8,00 €“. Auch die Benachrichtigung
+ans Kind sagt es dazu.
+
+Gerechnet wird in ganzen Zehnteln und ganzen Cent: der Regler schickt 10 bis 30,
+der Betrag ist `Grundbetrag × Zehntel ÷ 10`, kaufmännisch gerundet. Nirgends eine
+Fließkommazahl.
 
 ## Buchungen ändern und löschen
 

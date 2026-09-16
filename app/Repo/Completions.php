@@ -10,6 +10,10 @@ defined('KINDERARBEIT') || exit;
  */
 final class Completions
 {
+    /** Kleinster und groesster Zuschlagsfaktor, in Zehnteln. */
+    public const FAKTOR_MIN = 10;
+    public const FAKTOR_MAX = 30;
+
     public static function find(int $id): ?array
     {
         $stmt = Database::pdo()->prepare(
@@ -28,24 +32,61 @@ final class Completions
      * Kind meldet eine Aufgabe als erledigt. Titel und Betrag werden als Kopie
      * mitgespeichert, damit spaetere Aenderungen an der Aufgabe die Historie
      * nicht rueckwirkend verfaelschen.
+     *
+     * $stars sind 0 bis 3: womit das Kind sagt, dass es besonders schwer war.
+     * Was daraus wird, entscheiden die Eltern beim Bestaetigen - die Sterne
+     * allein aendern den Betrag nicht.
      */
-    public static function submit(array $task, int $childId, string $note = ''): int
+    public static function submit(array $task, int $childId, string $note = '', int $stars = 0): int
     {
         $pdo = Database::pdo();
         $pdo->prepare(
-            'INSERT INTO completions (task_id, child_id, title, emoji, amount_cents, status, note, created_at)
-             VALUES (:task_id, :child_id, :title, :emoji, :amount, \'pending\', :note, :created_at)'
+            'INSERT INTO completions (task_id, child_id, title, emoji, amount_cents, base_cents, stars, status, note, created_at)
+             VALUES (:task_id, :child_id, :title, :emoji, :amount, :amount, :stars, \'pending\', :note, :created_at)'
         )->execute([
             'task_id'    => (int)$task['id'],
             'child_id'   => $childId,
             'title'      => $task['title'],
             'emoji'      => $task['emoji'],
             'amount'     => (int)$task['amount_cents'],
+            'stars'      => max(0, min(3, $stars)),
             'note'       => $note,
             'created_at' => now(),
         ]);
 
         return (int)$pdo->lastInsertId();
+    }
+
+    /**
+     * Betrag mit Zuschlag, aus ganzzahligen Zehnteln - nirgends Fliesskomma.
+     * Gerundet wird kaufmaennisch: 0,50 € mal 1,5 sind 0,75 €.
+     */
+    public static function withFactor(int $baseCents, int $faktorZehntel): int
+    {
+        $faktorZehntel = max(self::FAKTOR_MIN, min(self::FAKTOR_MAX, $faktorZehntel));
+        return intdiv($baseCents * $faktorZehntel + 5, 10);
+    }
+
+    /** Grundbetrag einer Meldung - aeltere Zeilen haben noch keinen. */
+    public static function baseAmount(array $row): int
+    {
+        return (int)($row['base_cents'] ?? $row['amount_cents']);
+    }
+
+    /** Die Sterne einer Meldung als Text – leer, wenn das Kind keine gesetzt hat. */
+    public static function starLabel(array $row): string
+    {
+        return str_repeat('⭐', max(0, min(3, (int)($row['stars'] ?? 0))));
+    }
+
+    /**
+     * Der gewaehrte Zuschlag in Cent. Er wird nicht gespeichert, sondern ergibt
+     * sich aus der Differenz – so kann er gar nicht erst neben dem Betrag
+     * veralten, wenn eine Buchung spaeter im Verlauf geaendert wird.
+     */
+    public static function surcharge(array $row): int
+    {
+        return (int)$row['amount_cents'] - self::baseAmount($row);
     }
 
     /** Offene Meldungen – die Wiedervorlage der Eltern. */
@@ -95,9 +136,9 @@ final class Completions
      * Beides passiert in einer Transaktion, damit keine Gutschrift ohne
      * Bestaetigung (oder umgekehrt) entstehen kann.
      */
-    public static function approve(int $id, int $parentId, string $note = ''): bool
+    public static function approve(int $id, int $parentId, string $note = '', int $faktorZehntel = self::FAKTOR_MIN): bool
     {
-        return (bool)Database::transaction(function (PDO $pdo) use ($id, $parentId, $note) {
+        return (bool)Database::transaction(function (PDO $pdo) use ($id, $parentId, $note, $faktorZehntel) {
             // Nur wirklich offene Meldungen bestaetigen – schuetzt vor Doppelklicks
             // und davor, dass beide Eltern gleichzeitig auf "Bestätigen" tippen.
             $stmt = $pdo->prepare(
@@ -115,10 +156,24 @@ final class Completions
             $completion->execute(['id' => $id]);
             $row = $completion->fetch();
 
+            // Der Zuschlag wird beim Bestaetigen fest eingerechnet. amount_cents
+            // traegt danach den gutgeschriebenen Betrag - Ruecknahme, Aendern und
+            // Loeschen lesen genau diese Spalte und bleiben dadurch unveraendert.
+            $grund   = self::baseAmount($row);
+            $betrag  = self::withFactor($grund, $faktorZehntel);
+            $zuschlag = $betrag - $grund;
+
+            if ($zuschlag !== 0) {
+                $pdo->prepare('UPDATE completions SET amount_cents = :amount WHERE id = :id')
+                    ->execute(['amount' => $betrag, 'id' => $id]);
+            }
+
             Ledger::book(
                 (int)$row['child_id'],
-                (int)$row['amount_cents'],
-                $row['title'],
+                $betrag,
+                $zuschlag > 0
+                    ? $row['title'] . ' (×' . Money::factorLabel($faktorZehntel) . ')'
+                    : $row['title'],
                 'task',
                 'completion',
                 $id,

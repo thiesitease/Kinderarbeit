@@ -85,18 +85,26 @@ final class ParentController
 
         switch ($action) {
             case 'approve':
-                if (Completions::approve($id, (int)$me['id'], $note)) {
+                // Der Zuschlag kommt als Zehntel herein (10 = unveraendert).
+                $faktor = param_int('faktor', Completions::FAKTOR_MIN);
+                if (Completions::approve($id, (int)$me['id'], $note, $faktor)) {
+                    // Der Betrag kann sich durch den Zuschlag geaendert haben.
+                    $completion = Completions::find($id) ?? $completion;
+                    $zuschlag   = Completions::surcharge($completion);
+
                     Flash::success(
                         'Bestätigt: ' . Money::format((int)$completion['amount_cents'])
                         . ' für ' . $completion['child_name'] . ' gutgeschrieben.'
+                        . ($zuschlag > 0 ? ' Darin ' . Money::format($zuschlag) . ' Zuschlag.' : '')
                     );
 
                     $kindId  = (int)$completion['child_id'];
                     $guthaben = Ledger::balance($kindId);
 
                     $benachrichtigt = Push::toUser($kindId, [
-                        'title' => '✅ Bestätigt: ' . $completion['title'],
+                        'title' => ($zuschlag > 0 ? '⭐ ' : '✅ ') . 'Bestätigt: ' . $completion['title'],
                         'body'  => Money::format((int)$completion['amount_cents'])
+                                 . ($zuschlag > 0 ? ' – mit ' . Money::format($zuschlag) . ' Zuschlag' : '')
                                  . ' sind auf deinem Konto. Guthaben: ' . Money::format($guthaben) . '.',
                         'url'   => url('kind-konto'),
                         'tag'   => 'bestaetigt-' . $id,

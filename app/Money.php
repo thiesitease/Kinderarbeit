@@ -61,4 +61,15 @@ final class Money
         $cents = (int)round(((float)$value) * 100);
         return $negative ? -$cents : $cents;
     }
+
+    /**
+     * Einen Faktor in Zehnteln deutsch schreiben: 15 wird zu „1,5“, 20 zu „2“.
+     * Ganzzahlig gerechnet, damit auch hier nirgends Fliesskomma auftaucht.
+     */
+    public static function factorLabel(int $zehntel): string
+    {
+        $ganz = intdiv($zehntel, 10);
+        $rest = $zehntel % 10;
+        return $rest === 0 ? (string)$ganz : $ganz . ',' . $rest;
+    }
 }

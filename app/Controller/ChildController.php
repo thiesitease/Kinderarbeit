@@ -61,16 +61,22 @@ final class ChildController
             redirect('kind');
         }
 
-        Completions::submit($task, (int)$me['id'], param('note'));
+        $sterne = max(0, min(3, param_int('sterne')));
+        Completions::submit($task, (int)$me['id'], param('note'), $sterne);
 
         Push::toParents([
             'title' => '⏳ ' . $me['name'] . ' hat etwas erledigt',
-            'body'  => $task['title'] . ' · ' . Money::format((int)$task['amount_cents']) . ' – bitte bestätigen.',
+            'body'  => $task['title'] . ' · ' . Money::format((int)$task['amount_cents'])
+                     . ($sterne > 0 ? ' · ' . str_repeat('⭐', $sterne) . ' war schwer' : '')
+                     . ' – bitte bestätigen.',
             'url'   => url('eltern'),
             'tag'   => 'wiedervorlage',
         ]);
 
-        Flash::success('Super! „' . $task['title'] . '“ wartet jetzt auf die Bestätigung von Mama oder Papa.');
+        Flash::success(
+            'Super! „' . $task['title'] . '“ wartet jetzt auf die Bestätigung von Mama oder Papa.'
+            . ($sterne > 0 ? ' Dass es schwer war, steht dabei.' : '')
+        );
         redirect('kind');
     }
 

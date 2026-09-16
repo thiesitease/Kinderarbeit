@@ -37,7 +37,7 @@ git config commit.gpgsign false
 ## Befehle
 
 ```bash
-php bin/selftest.php                 # 180 Prüfungen der Rechenlogik, ohne Webserver
+php bin/selftest.php                 # 269 Prüfungen der Rechenlogik, ohne Webserver
 php bin/demo-data.php --force        # Beispielbestand zum Ausprobieren (löscht die DB!)
 php bin/zugangslink.php Emilius      # Zugangslink erzeugen (Rettungsanker per SSH)
 php bin/reset-pin.php Thies 4711     # PIN zurücksetzen, wenn niemand mehr reinkommt
@@ -94,6 +94,32 @@ sonst zeigen die Kacheln eine Summe, die nicht stimmt.
 die Gutschrift – beides in einer Transaktion. Diese `WHERE`-Bedingung ist der Schutz
 davor, dass ein Doppelklick oder zwei gleichzeitig bestätigende Eltern doppelt buchen.
 Nicht durch ein Lesen-dann-Schreiben ersetzen.
+
+**Sterne sind eine Bitte, der Zuschlag ist die Antwort.** Das Kind setzt beim
+Melden 0 bis 3 Sterne (`completions.stars`), die Eltern beantworten sie beim
+Bestätigen mit einem Faktor. Der kommt als **ganze Zehntel** herein (10 bis 30,
+`Completions::FAKTOR_MIN`/`MAX`) und wird mit `intdiv($betrag * $zehntel + 5, 10)`
+gerechnet – auch hier nirgends Fließkomma.
+
+Entscheidend ist, was `completions.amount_cents` bedeutet: **was gutgeschrieben
+wurde**. Daran hängen `Completions::revoke()` (bucht genau diesen Betrag gegen)
+und `Ledger::update()` (zieht die Spalte mit). Der ursprüngliche Aufgabenbetrag
+steht deshalb daneben in `base_cents`; `Completions::baseAmount()` fällt für
+ältere Zeilen ohne diese Spalte auf `amount_cents` zurück. Der Zuschlag selbst
+wird **nicht** gespeichert, sondern in `Completions::surcharge()` aus der Differenz
+gerechnet – sonst veraltete er, sobald jemand die Buchung im Verlauf ändert.
+
+Gebucht wird **eine** Zeile in der Kategorie `task` über den erhöhten Betrag,
+nicht zusätzlich eine in `bonus`. Zwei Zeilen an einer Meldung brächten genau die
+Verflechtungen mit, die oben beim Löschen beschrieben sind: welche fällt mit weg,
+was gilt danach als bestätigt. Der Faktor steht stattdessen im Verwendungszweck
+(„Hühner füttern (×2)“).
+
+Im Browser rechnet `assets/app.js` dieselbe Formel noch einmal, damit am Regler
+sofort steht, was herauskommt. Ohne JavaScript bleiben Vorschau und Betrag im
+Knopf **verborgen** (`hidden`) statt falsch: gebucht wird ohnehin erst auf dem
+Server, und ein stehengebliebener Betrag neben einem verschobenen Regler wäre
+eine Lüge.
 
 **Feste Ausgaben brauchen keinen Cron.** `Billing::run()` läuft beim ersten
 Seitenaufruf des Tages mit (`settings.last_billing_run`) und holt auch zurückliegende

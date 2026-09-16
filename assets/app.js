@@ -123,6 +123,58 @@
     });
   });
 
+  /* --- Zuschlag: Vorschau am Regler --------------------------------------
+     Gerechnet wird in Zehnteln und ganzen Cent, genau wie auf dem Server
+     (Completions::withFactor). Der Betrag entsteht trotzdem erst dort - hier
+     steht nur, was gleich passiert. Ohne JavaScript bleibt die Vorschau
+     verborgen und der Knopf nennt keinen Betrag, statt einen falschen. */
+  document.querySelectorAll('[data-zuschlag]').forEach(function (block) {
+    var regler = block.querySelector('input[type="range"]');
+    var wert   = block.querySelector('[data-zuschlag-wert]');
+    if (!regler || !wert) return;
+
+    var form   = regler.form;
+    var betrag = form && form.querySelector('[data-zuschlag-betrag]');
+    var grund  = Number(block.dataset.grund || 0);
+
+    // Deutsch formatiert wie Money::format – ganzzahlig, damit die Vorschau
+    // nicht ein Cent neben dem Betrag liegt, den der Server gleich bucht.
+    function euro(cent) {
+      var ganz = String(Math.floor(cent / 100)).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+      return ganz + ',' + ('0' + (cent % 100)).slice(-2) + ' €';
+    }
+
+    function faktor(zehntel) {
+      var rest = zehntel % 10;
+      return rest === 0 ? String(Math.floor(zehntel / 10))
+                        : Math.floor(zehntel / 10) + ',' + rest;
+    }
+
+    function zeige() {
+      var zehntel = Number(regler.value);
+      var neu     = Math.floor((grund * zehntel + 5) / 10);
+
+      wert.hidden = false;
+      wert.textContent = zehntel === 10
+        ? 'ohne Zuschlag · ' + euro(grund)
+        : '×' + faktor(zehntel) + ' · ' + euro(grund) + ' → ' + euro(neu);
+      if (zehntel === 10) {
+        block.classList.remove('zuschlag--aktiv');
+      } else {
+        block.classList.add('zuschlag--aktiv');
+      }
+
+      if (betrag) {
+        betrag.textContent = ' ' + euro(neu);
+        betrag.hidden = false;
+      }
+    }
+
+    regler.addEventListener('input', zeige);
+    regler.addEventListener('change', zeige);
+    zeige();
+  });
+
   /* --- Benachrichtigungen ------------------------------------------------- */
   (function () {
     var box = document.querySelector('[data-push]');

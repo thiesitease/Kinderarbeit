@@ -351,6 +351,10 @@ a:hover { color: color-mix(in srgb, var(--accent-ink) 75%, var(--text)); }
   font-size: 1.05rem; white-space: nowrap;
 }
 .task__side { display: flex; align-items: center; gap: .6rem; flex: none; }
+/* Klappt das Kind „War es besonders schwer?“ auf, wird die Zeile hoch. Das
+   Symbol soll dann oben neben dem Titel bleiben statt mittig zu schweben.
+   :has() kennt Safari erst ab 15.4 – vorher bleibt es eben mittig. */
+.task:has(.reveal[open]) { align-items: flex-start; }
 .task--done { opacity: .62; }
 .task--waiting { border-color: color-mix(in srgb, var(--warn) 40%, var(--border)); background: var(--warn-soft); }
 
@@ -453,6 +457,33 @@ a:hover { color: color-mix(in srgb, var(--accent-ink) 75%, var(--text)); }
 .review__body { padding: .75rem .9rem; display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; }
 .review__note { flex: 1; min-width: 11rem; }
 
+/* Zuschlag: der Regler, mit dem Eltern die Sterne des Kindes beantworten.
+   Er nimmt eine eigene Zeile in der Wiedervorlage ein (flex-basis 100 %),
+   damit er neben Notizfeld und Knöpfen nicht zur Briefmarke wird. */
+.zuschlag {
+  flex: 1 1 100%;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: .6rem .75rem;
+  background: var(--surface-2);
+}
+.zuschlag--aktiv { border-color: var(--accent); background: var(--accent-soft); }
+.zuschlag__grund { margin: 0 0 .5rem; font-size: .88rem; }
+.zuschlag__sterne { letter-spacing: .08em; }
+.zuschlag__label {
+  display: block; margin-bottom: .35rem;
+  font-size: .8rem; font-weight: 600; color: var(--muted);
+}
+.zuschlag__regler { display: flex; align-items: center; gap: .6rem; }
+.zuschlag__ende { font-size: .82rem; font-weight: 600; color: var(--muted); }
+/* accent-color kennt Safari erst ab 15.4 – ohne das bleibt der Regler
+   einfach in der Farbe des Browsers, und das ist völlig in Ordnung. */
+.zuschlag__schieber { flex: 1 1 8rem; min-width: 6rem; height: 1.9rem; accent-color: var(--accent); }
+.zuschlag__wert {
+  display: block; margin-top: .45rem;
+  font-size: .9rem; font-weight: 650; font-variant-numeric: tabular-nums;
+}
+
 /* --- Formulare -------------------------------------------------------------- */
 
 .field { margin-bottom: .9rem; }
@@ -536,6 +567,9 @@ a:hover { color: color-mix(in srgb, var(--accent-ink) 75%, var(--text)); }
   color: color-mix(in srgb, var(--accent-ink) 80%, var(--text));
 }
 .segmented input:focus-visible + label { outline: 3px solid color-mix(in srgb, var(--accent) 55%, transparent); }
+/* Vier Felder nebeneinander, auch auf einem schmalen Handy –
+   sonst rutscht „⭐⭐⭐“ allein in die zweite Zeile. */
+.segmented--sterne label { padding: .5rem .6rem; }
 
 /* --- Meldungen -------------------------------------------------------------- */
 
