@@ -18,6 +18,10 @@
 # Beides also weiterhin von Hand:
 #
 #     ssh <benutzer>@<server> "cd <pfad> && php bin/leeren.php alles"
+#
+# „pin-zuruecksetzen“ setzt ausschliesslich die Start-PIN aus dem Quelltext.
+# Eine frei gewaehlte PIN gehoert nicht hierher: Eingaben eines Laufs stehen
+# hinterher dauerhaft in dessen Protokoll.
 
 name: Wartung
 
@@ -31,7 +35,21 @@ on:
         type: choice
         options:
           - anzeigen
+          - fehlerprotokoll
+          - pin-zuruecksetzen
           - verlauf-leeren
+      profil:
+        description: 'Nur für "pin-zuruecksetzen": wessen PIN?'
+        required: false
+        default: ''
+        type: choice
+        options:
+          - ''
+          - Emilius
+          - Julius
+          - Bruno
+          - Birgitta
+          - Thies
       bestaetigen:
         description: 'Zum Löschen hier "ja" eintippen (sonst wird nichts gelöscht)'
         required: false
@@ -55,12 +73,28 @@ jobs:
         id: plan
         env:
           AUFGABE: ${{ inputs.aufgabe }}
+          PROFIL: ${{ inputs.profil }}
           BESTAETIGEN: ${{ inputs.bestaetigen }}
         run: |
           case "$AUFGABE" in
             anzeigen)
               echo "befehl=php bin/leeren.php" >> "$GITHUB_OUTPUT"
               echo "Es wird nur angezeigt, was in der Datenbank steht. Gelöscht wird nichts."
+              ;;
+            fehlerprotokoll)
+              echo "befehl=php bin/protokoll.php" >> "$GITHUB_OUTPUT"
+              echo "Zeigt das Ende von data/php-error.log. Es wird nichts verändert."
+              ;;
+            pin-zuruecksetzen)
+              if [ -z "$PROFIL" ]; then
+                echo "::error::Dafür muss oben im Feld „profil“ ein Name ausgewählt sein."
+                exit 1
+              fi
+              # Die Start-PIN steht in Database::SEED_USERS und damit ohnehin im
+              # Quelltext. So landet hier keine PIN im Protokoll dieses Laufs.
+              echo "befehl=php bin/reset-pin.php $PROFIL --start" >> "$GITHUB_OUTPUT"
+              echo "$PROFIL bekommt die Start-PIN zurück und muss beim nächsten"
+              echo "Anmelden eine eigene setzen. Sonst ändert sich nichts."
               ;;
             verlauf-leeren)
               if [ "$BESTAETIGEN" != "ja" ]; then

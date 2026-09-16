@@ -41,6 +41,8 @@ php bin/selftest.php                 # 180 Prüfungen der Rechenlogik, ohne Webs
 php bin/demo-data.php --force        # Beispielbestand zum Ausprobieren (löscht die DB!)
 php bin/zugangslink.php Emilius      # Zugangslink erzeugen (Rettungsanker per SSH)
 php bin/reset-pin.php Thies 4711     # PIN zurücksetzen, wenn niemand mehr reinkommt
+php bin/protokoll.php                # Ende von data/php-error.log anzeigen
+php bin/reset-pin.php Bruno --start  # zurück auf die Start-PIN aus SEED_USERS
 php bin/leeren.php                   # zeigt den Bestand, löscht nichts
 php bin/leeren.php verlauf --ja      # Buchungen und Meldungen weg, Profile bleiben
 php -S localhost:8080                # lokal ausprobieren
@@ -185,6 +187,14 @@ Abbuchungen wären sofort wieder da. Und die Datenbankdateien bekommen danach
 läuft als die Kommandozeile; im Werkszustand-Modus wird die Datei nur gelöscht
 und vom Webserver selbst neu angelegt, damit sie ihm gehört.
 
+**Abgeschaltete Absende-Knöpfe müssen wieder aufwachen.** `assets/app.js` schaltet
+nach dem Abschicken jeden `button[type=submit]` ab, damit ein Doppelklick nicht
+doppelt bucht. Wer danach im Browser **zurückgeht**, bekommt die Seite aus dem
+Zurück-Cache genau so wieder, wie er sie verlassen hat – mit dem abgeschalteten
+Knopf. Das Formular ist dann tot und es sieht aus, als hinge die Seite. Deshalb
+gibt ein `pageshow`-Handler (`event.persisted`) alles wieder frei. Headless-Browser
+nutzen den Zurück-Cache nicht, ein Test dafür schlägt also nicht an.
+
 **Abschottung.** `app/`, `data/`, `bin/` und `docs/` sind über `.htaccess` gesperrt;
 zusätzlich beginnt jede PHP-Datei außerhalb des Einstiegspunkts mit
 `defined('KINDERARBEIT') || exit;`. Beides beibehalten.
@@ -229,6 +239,13 @@ Was dort bewusst **nicht** auswählbar ist: „alles löschen“ (macht die
 Zugangslinks ungültig – gehört an eine Stelle, an der man tippt statt klickt)
 und das Anzeigen der Zugangslinks (die stünden danach dauerhaft im Protokoll
 des Laufs). Beides weiter von Hand über SSH.
+
+Aus demselben Grund setzt „pin-zuruecksetzen“ **nur** die Start-PIN aus
+`Database::SEED_USERS`. Die steht ohnehin im Quelltext; eine frei gewählte PIN
+stünde dagegen hinterher dauerhaft im Protokoll des Laufs. Die Start-PINs
+bestehen absichtlich aus lauter gleichen Ziffern und fallen deshalb durch
+`validate_pin()` – `reset-pin.php --start` geht daran vorbei, setzt aber
+`must_change_pin`, damit sie nicht liegen bleibt.
 
 **Was die AGB von manitu für SSH-Benutzer verbieten** und was deshalb hier nicht
 vorkommen darf: eigene `crontab`-Einträge (dafür gibt es das Cronjob-Feature im
