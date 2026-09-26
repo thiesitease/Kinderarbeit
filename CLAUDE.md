@@ -218,6 +218,15 @@ Anwendung. Er speichert bewusst nichts zwischen – die Seiten ändern sich mit 
 Bestätigung, ein Zwischenspeicher zeigte veraltete Kontostände. Die `.htaccess`
 nimmt ihn deshalb vom Zwischenspeichern aus.
 
+**Die Version in `index.php` ist der Zwischenspeicher-Schlüssel.** `layout.php`
+hängt sie an beide Dateien (`app.css?v=…`, `app.js?v=…`), und die `.htaccess`
+lässt CSS und JavaScript sieben Tage im Browser liegen. Wer an einer der beiden
+etwas ändert und `define('KINDERARBEIT', …)` stehen lässt, liefert an jedes
+Gerät, das sie schon hat, weiter die alte Fassung – bis zu eine Woche lang, und
+auf dem Home-Bildschirm-Symbol gern länger. Genau das ist bei den Sternen
+passiert: neues Markup, altes Stylesheet. Also mit jeder Änderung an
+`assets/app.css` oder `assets/app.js` die Version mit hochzählen.
+
 **Die Familie hat ein älteres iPad.** Deshalb gilt für neuere CSS-Funktionen:
 erst ein Rückfall, dann die schöne Fassung. Safari kann `color-mix()` erst ab
 16.2 und `backdrop-filter` unpräfigiert erst ab 18. Ohne Rückfall stand die

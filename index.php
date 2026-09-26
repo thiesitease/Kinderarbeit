@@ -6,7 +6,7 @@ declare(strict_types=1);
  * Einstiegspunkt fuer alle Seitenaufrufe.
  */
 
-define('KINDERARBEIT', '1.1.0');
+define('KINDERARBEIT', '1.2.0');
 
 require __DIR__ . '/app/bootstrap.php';
 
