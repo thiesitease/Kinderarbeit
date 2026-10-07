@@ -37,7 +37,7 @@ git config commit.gpgsign false
 ## Befehle
 
 ```bash
-php bin/selftest.php                 # 269 Prüfungen der Rechenlogik, ohne Webserver
+php bin/selftest.php                 # 284 Prüfungen der Rechenlogik, ohne Webserver
 php bin/demo-data.php --force        # Beispielbestand zum Ausprobieren (löscht die DB!)
 php bin/zugangslink.php Emilius      # Zugangslink erzeugen (Rettungsanker per SSH)
 php bin/reset-pin.php Thies 4711     # PIN zurücksetzen, wenn niemand mehr reinkommt
