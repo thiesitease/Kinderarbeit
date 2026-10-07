@@ -319,6 +319,14 @@ Nachmittag gekostet und sind nirgends sonst dokumentiert:
 * **`data/` braucht 775.** Der Webserver läuft als Site-Benutzer, übertragen wird
   als SSH-Benutzer; ohne Gruppenschreibrecht kann die Anwendung die Datenbank nicht
   anlegen. Der letzte Schritt des Workflows setzt das.
+* **Exit-Code 255 im Schritt „Zielverzeichnis prüfen" ist immer SSH.** Der Schritt
+  läuft mit `set -e`; scheitert die Verbindung, bricht er ab, bevor seine eigene
+  Diagnose greift, und in der Oberfläche steht nur „Process completed with exit
+  code 255". Der Grund steht in der vorletzten Zeile des Job-Protokolls. Schon
+  dagewesen: `Your account has expired` – der SSH-Benutzer beim Hoster hat ein
+  Ablaufdatum und muss im Kundenbereich verlängert werden; an der Anwendung
+  liegt es dann nicht, die Seite läuft unverändert weiter, es wird nur nichts
+  mehr veröffentlicht.
 * **`DEPLOY_PATH` zeigt auf die Subdomain, niemals auf `web/`.** Dort liegen alle
   Websites des Pakets nebeneinander – `rsync --delete` würde sie löschen. Der Schritt
   „Zielverzeichnis prüfen" blockiert das; diese Prüfung nicht entfernen.
