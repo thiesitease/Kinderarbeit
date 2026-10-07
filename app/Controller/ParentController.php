@@ -197,6 +197,19 @@ final class ParentController
         ]);
     }
 
+    /** Monatssaldo: alle Kinder nebeneinander, Monat für Monat. */
+    public static function monthlyBalances(): void
+    {
+        Auth::requireParent();
+
+        View::page('parent/month-balances', [
+            'title'    => 'Monatssaldo',
+            'children' => Users::children(),
+            'monate'   => Ledger::monthlyTotalsByChild(),
+            'balances' => Ledger::balances(),
+        ]);
+    }
+
     /** Detailseite eines Kindes mit Konto, Aufgaben und festen Ausgaben. */
     public static function childDetail(): void
     {

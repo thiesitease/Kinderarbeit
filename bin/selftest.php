@@ -870,6 +870,31 @@ check('Bleibt beim Zuruecknehmen liegen',
       in_array('Schwimmbad', array_column(Expenses::clearBookings(current_month()), 'title'), true), false);
 check('Und wird nicht neu gebucht',   Billing::run(true), 0);
 
+echo "\nMonatssaldo fuer alle Kinder\n";
+$alle = Ledger::monthlyTotalsByChild();
+check('Monate sind dabei',            isset($alle[current_month()]), true);
+check('Neuester Monat zuerst',        array_key_first($alle), max(array_keys($alle)));
+
+$julius = Users::findByName('Julius');
+foreach (Ledger::monthlyTotals((int)$julius['id']) as $monat) {
+    $ausTabelle = $alle[$monat['month']][(int)$julius['id']]['net'] ?? 'fehlt';
+    check('Saldo ' . $monat['month'] . ' deckt sich je Kind', $ausTabelle, $monat['net']);
+}
+
+$summe = 0;
+foreach ($alle as $zeile) {
+    $summe += $zeile[(int)$julius['id']]['net'] ?? 0;
+}
+check('Summe aller Monate ist der Kontostand', $summe, Ledger::balance((int)$julius['id']));
+
+// Ein Monat, in dem nur ein Kind etwas hatte: die anderen stehen gar nicht erst drin.
+Ledger::book((int)$julius['id'], 250, 'Lang her', 'bonus', 'manual', null,
+             (int)$thies['id'], '2020-01-15 12:00:00');
+$alle = Ledger::monthlyTotalsByChild();
+check('Alter Monat ist dabei',        isset($alle['2020-01']), true);
+check('Nur das Kind mit Buchung',     array_keys($alle['2020-01']), [(int)$julius['id']]);
+check('Und mit seinem Saldo',         $alle['2020-01'][(int)$julius['id']]['net'], 250);
+
 // Aufraeumen
 foreach (glob($tmp . '/*') ?: [] as $file) {
     @unlink($file);

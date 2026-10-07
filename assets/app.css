@@ -613,6 +613,20 @@ a:hover { color: color-mix(in srgb, var(--accent-ink) 75%, var(--text)); }
 .table { width: 100%; border-collapse: collapse; font-size: .9rem; }
 .table th, .table td { padding: .6rem .7rem; text-align: left; border-bottom: 1px solid var(--border); white-space: nowrap; }
 
+/* In Tabellen tragen die Zahlen die Aussage: grün für plus, rot für minus. Ein
+   Link darf diese Farbe nicht überschreiben, und ein Dutzend Unterstreichungen
+   machen die Spalte unruhig – erst beim Draufzeigen. */
+.table a { color: inherit; text-decoration: none; }
+.table a:hover, .table a:focus-visible { text-decoration: underline; }
+
+/* Die Monatsspalte bleibt beim seitlichen Scrollen stehen – sonst weiß man auf
+   dem Handy nicht mehr, zu welchem Monat die Zahl rechts gehört. */
+.table .col-monat {
+  position: sticky; left: 0; z-index: 1;
+  background: var(--surface);
+  box-shadow: 10px 0 10px -10px rgb(0 0 0 / .35);
+}
+
 /* Die Spalte mit Bearbeiten und Löschen bleibt beim seitlichen Scrollen stehen,
    damit sie auf dem Handy erreichbar ist. */
 .table .col-actions {

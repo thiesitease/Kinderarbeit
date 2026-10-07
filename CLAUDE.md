@@ -37,7 +37,7 @@ git config commit.gpgsign false
 ## Befehle
 
 ```bash
-php bin/selftest.php                 # 295 Prüfungen der Rechenlogik, ohne Webserver
+php bin/selftest.php                 # 303 Prüfungen der Rechenlogik, ohne Webserver
 php bin/demo-data.php --force        # Beispielbestand zum Ausprobieren (löscht die DB!)
 php bin/zugangslink.php Emilius      # Zugangslink erzeugen (Rettungsanker per SSH)
 php bin/reset-pin.php Thies 4711     # PIN zurücksetzen, wenn niemand mehr reinkommt
@@ -130,6 +130,13 @@ Monat“ – im Elternbereich auf der Kindseite, für das Kind unter *Mein Konto
 Der Saldo ist die Bilanz genau dieses Monats, nicht der fortlaufende Kontostand:
 am 1. fängt die Rechnung wieder bei null an. Das Guthaben über alle Monate steht
 weiterhin oben im Kopf.
+
+Dieselben Zahlen für alle Kinder nebeneinander liefert
+`Ledger::monthlyTotalsByChild()` – Monat => Kind-ID => Zahlen – für die Seite
+**Monatssaldo** (`?p=monatssaldo`, `views/parent/month-balances.php`). Monate,
+in denen ein Kind nichts gebucht hat, lassen es weg; die Zelle bleibt leer statt
+0,00 € zu behaupten. Die Fußzeile zeigt das Guthaben über alle Monate, nicht die
+Summe der angezeigten – bei mehr als 24 Monaten wäre das nicht dasselbe.
 
 **Feste Ausgaben gehen am Monatsende ab.** Am Monatsanfang hat das Kind noch
 nichts verdient – wird dann abgebucht, steht das Konto sofort im Minus. Deshalb

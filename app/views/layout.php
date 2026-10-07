@@ -77,6 +77,7 @@ $pendingForNav = ($me && $me['role'] === 'parent') ? Completions::pendingCount()
             <?= View::render('partials/nav-link', ['href' => url('eltern'),   'label' => 'Übersicht',  'icon' => '🏠', 'active' => in_array($page, ['eltern', 'start'], true), 'count' => $pendingForNav]) ?>
             <?= View::render('partials/nav-link', ['href' => url('aufgaben'), 'label' => 'Aufgaben',   'icon' => '📋', 'active' => in_array($page, ['aufgaben', 'aufgabe-form'], true)]) ?>
             <?= View::render('partials/nav-link', ['href' => url('kinder'),   'label' => 'Kinder',     'icon' => '🧒', 'active' => in_array($page, ['kinder', 'kind-detail'], true)]) ?>
+            <?= View::render('partials/nav-link', ['href' => url('monatssaldo'), 'label' => 'Monate',    'icon' => '📅', 'active' => $page === 'monatssaldo']) ?>
             <?= View::render('partials/nav-link', ['href' => url('ausgaben'), 'label' => 'Ausgaben',   'icon' => '💳', 'active' => in_array($page, ['ausgaben', 'ausgabe-form'], true)]) ?>
             <?= View::render('partials/nav-link', ['href' => url('verlauf'),  'label' => 'Verlauf',    'icon' => '🕘', 'active' => in_array($page, ['verlauf', 'buchung'], true)]) ?>
             <?= View::render('partials/nav-link', ['href' => url('familie'),  'label' => 'Familie',    'icon' => '⚙️', 'active' => $page === 'familie']) ?>

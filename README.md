@@ -20,6 +20,7 @@ vollständige Historie und der Restbetrag pro Monat.
 | Aufgaben | Eltern | Aufgaben anlegen, Betrag festlegen, zuweisen, pausieren |
 | Kinder | Eltern | Konten im Vergleich, Detailseite je Kind |
 | Ausgaben | Eltern | regelmäßige monatliche Ausgaben je Kind |
+| Monatssaldo | Eltern | Endsaldo jedes Monats, alle Kinder nebeneinander |
 | Verlauf | Eltern | alle Buchungen, filterbar nach Kind und Monat – hier lassen sie sich auch ändern und löschen |
 | Familie | Eltern | Zugangslinks, PINs, Sperren, Symbole, Farben, angemeldete Geräte |
 | Benachrichtigungen | alle | pro Gerät ein- und ausschaltbar, direkt auf der Startseite |
@@ -67,6 +68,10 @@ gehört ausdrücklich nicht zur Anwendung).
 <img src="docs/bilder/17-eltern-kinder.png" width="900">
 
 **Kinder im Vergleich.** Alle Konten nebeneinander, umschaltbar auf jeden vergangenen Monat.
+
+<img src="docs/bilder/17b-monatssaldo.png" width="900">
+
+**Monatssaldo.** Der Endsaldo jedes Monats, alle Kinder nebeneinander – ob plus oder minus. Jeder Monat fängt am 1. bei 0 an; ein Klick auf einen Betrag führt zu diesem Monat beim Kind. Unten der Kontostand über alle Monate hinweg.
 
 <img src="docs/bilder/18-eltern-verlauf.png" width="900">
 

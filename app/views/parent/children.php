@@ -6,6 +6,7 @@ defined('KINDERARBEIT') || exit;
 <div class="section__head">
   <h1>Kinder</h1>
   <div class="section__action">
+    <a class="btn btn--sm" href="<?= e(url('monatssaldo')) ?>">📅 Monatssaldo</a>
     <?= View::render('partials/month-switch', ['month' => $month, 'months' => $months, 'target' => 'kinder']) ?>
   </div>
 </div>

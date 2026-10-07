@@ -6,7 +6,7 @@ declare(strict_types=1);
  * Einstiegspunkt fuer alle Seitenaufrufe.
  */
 
-define('KINDERARBEIT', '1.2.0');
+define('KINDERARBEIT', '1.3.0');
 
 require __DIR__ . '/app/bootstrap.php';
 
@@ -81,6 +81,7 @@ try {
         case 'pruefen':        ParentController::decide();         break;
         case 'kinder':         ParentController::childrenOverview(); break;
         case 'kind-detail':    ParentController::childDetail();    break;
+        case 'monatssaldo':    ParentController::monthlyBalances(); break;
 
         // --- Aufgabenverwaltung --------------------------------------------
         case 'aufgaben':       TaskController::index();            break;

@@ -170,6 +170,9 @@ console.log('Breite Ansichten');
   await p.goto(`${BASE}/?p=kinder`, { waitUntil: 'networkidle' });
   await schuss(p, '17-eltern-kinder');
 
+  await p.goto(`${BASE}/?p=monatssaldo`, { waitUntil: 'networkidle' });
+  await schuss(p, '17b-monatssaldo');
+
   await p.goto(`${BASE}/?p=verlauf`, { waitUntil: 'networkidle' });
   await schuss(p, '18-eltern-verlauf');
 
