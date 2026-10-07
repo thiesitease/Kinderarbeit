@@ -148,7 +148,7 @@ final class Database
             title        TEXT    NOT NULL,
             emoji        TEXT    NOT NULL DEFAULT '💳',
             amount_cents INTEGER NOT NULL,
-            day_of_month INTEGER NOT NULL DEFAULT 1,
+            day_of_month INTEGER NOT NULL DEFAULT 31,   -- 31 = am Monatsende
             start_month  TEXT    NOT NULL,
             end_month    TEXT,
             is_active    INTEGER NOT NULL DEFAULT 1,
@@ -223,6 +223,26 @@ final class Database
         $pdo->exec('CREATE UNIQUE INDEX IF NOT EXISTS idx_users_token ON users (access_token) WHERE access_token IS NOT NULL');
 
         self::relaxExpenseBookings($pdo);
+        self::expensesToMonthEnd($pdo);
+    }
+
+    /**
+     * Feste Ausgaben wurden frueher am 1. abgebucht. Dann steht das Konto am
+     * Monatsanfang im Minus, bevor das Kind ueberhaupt etwas verdienen konnte.
+     * Deshalb wandern bestehende Ausgaben einmalig ans Monatsende; ein spaeter
+     * von Hand gesetzter Tag bleibt dadurch erhalten.
+     */
+    private static function expensesToMonthEnd(PDO $pdo): void
+    {
+        $stmt = $pdo->prepare('SELECT value FROM settings WHERE key = :key');
+        $stmt->execute(['key' => 'expenses_month_end']);
+        if ($stmt->fetchColumn() !== false) {
+            return;
+        }
+
+        $pdo->exec('UPDATE expenses SET day_of_month = 31');
+        $pdo->prepare('INSERT INTO settings (key, value) VALUES (:key, :value)')
+            ->execute(['key' => 'expenses_month_end', 'value' => now()]);
     }
 
     /**

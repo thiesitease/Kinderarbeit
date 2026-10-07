@@ -206,7 +206,7 @@ $rest = $summary['net'];
               <div class="entry__icon" aria-hidden="true"><?= e($expense['emoji']) ?></div>
               <div class="entry__body">
                 <div class="entry__title"><?= e($expense['title']) ?></div>
-                <div class="entry__meta">jeden <?= (int)$expense['day_of_month'] ?>. im Monat</div>
+                <div class="entry__meta"><?= e(Expenses::dayLabel((int)$expense['day_of_month'])) ?></div>
               </div>
               <div class="entry__amount value-negative"><?= e(Money::format(-(int)$expense['amount_cents'])) ?></div>
             </div>

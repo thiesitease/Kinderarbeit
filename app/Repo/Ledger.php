@@ -251,6 +251,48 @@ final class Ledger
         ];
     }
 
+    /**
+     * Monat fuer Monat, neueste zuerst: was zusammenkam, was abging und was
+     * unter dem Strich blieb. Jeder Monat steht fuer sich – am 1. faengt die
+     * Rechnung wieder bei null an, der Saldo ist die Bilanz genau dieses Monats.
+     *
+     * Dieselben Schluessel wie monthSummary(), dazu 'month'.
+     */
+    public static function monthlyTotals(int $childId, int $limit = 24): array
+    {
+        $stmt = Database::pdo()->prepare(
+            "SELECT booked_month AS month,
+                COALESCE(SUM(CASE WHEN category = 'task'    AND amount_cents > 0 THEN amount_cents END), 0) AS earned,
+                COALESCE(SUM(CASE WHEN category = 'bonus'   AND amount_cents > 0 THEN amount_cents END), 0) AS bonus,
+                COALESCE(SUM(CASE WHEN category = 'expense' THEN -amount_cents END), 0)                 AS expenses,
+                COALESCE(SUM(CASE WHEN category = 'payout'  THEN -amount_cents END), 0)                 AS payouts,
+                COALESCE(SUM(CASE WHEN category = 'correction' THEN amount_cents END), 0)               AS corrections,
+                COALESCE(SUM(amount_cents), 0)                                                          AS net,
+                COUNT(*)                                                                                AS entries
+               FROM ledger
+              WHERE child_id = :child
+           GROUP BY booked_month
+           ORDER BY booked_month DESC
+              LIMIT " . max(1, $limit)
+        );
+        $stmt->execute(['child' => $childId]);
+
+        $monate = [];
+        foreach ($stmt->fetchAll() as $row) {
+            $monate[] = [
+                'month'       => (string)$row['month'],
+                'earned'      => (int)$row['earned'],
+                'bonus'       => (int)$row['bonus'],
+                'expenses'    => (int)$row['expenses'],
+                'payouts'     => (int)$row['payouts'],
+                'corrections' => (int)$row['corrections'],
+                'net'         => (int)$row['net'],
+                'entries'     => (int)$row['entries'],
+            ];
+        }
+        return $monate;
+    }
+
     /** Buchungen eines Kindes, optional auf einen Monat begrenzt. */
     public static function forChild(int $childId, ?string $month = null, int $limit = 100): array
     {

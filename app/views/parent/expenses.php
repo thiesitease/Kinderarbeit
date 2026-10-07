@@ -57,7 +57,7 @@ $grandTotal = array_sum($totals);
                     <?php if (!$isActive): ?><span class="pill tiny">pausiert</span><?php endif; ?>
                   </div>
                   <div class="entry__meta">
-                    jeden <?= (int)$expense['day_of_month'] ?>. im Monat · seit <?= e(month_label($expense['start_month'])) ?>
+                    <?= e(Expenses::dayLabel((int)$expense['day_of_month'])) ?> · seit <?= e(month_label($expense['start_month'])) ?>
                     <?php if (!empty($expense['end_month'])): ?> · bis <?= e(month_label($expense['end_month'])) ?><?php endif; ?>
                   </div>
                 </div>

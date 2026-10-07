@@ -90,7 +90,12 @@ final class Billing
         try {
             return (bool)Database::transaction(function (PDO $pdo) use ($expense, $month) {
                 $day = self::effectiveDay((int)$expense['day_of_month'], $month);
-                $bookedAt = $month . '-' . str_pad((string)$day, 2, '0', STR_PAD_LEFT) . ' 06:00:00';
+
+                // Am Monatsende abends buchen, damit die Abbuchung in der Liste
+                // unter dem steht, was das Kind an diesem Tag noch verdient hat.
+                $letzter = (int)date('t', (int)strtotime($month . '-01 12:00:00'));
+                $zeit    = $day === $letzter ? '23:00:00' : '06:00:00';
+                $bookedAt = $month . '-' . str_pad((string)$day, 2, '0', STR_PAD_LEFT) . ' ' . $zeit;
 
                 $ledgerId = Ledger::book(
                     (int)$expense['child_id'],

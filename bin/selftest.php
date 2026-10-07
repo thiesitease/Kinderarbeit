@@ -775,6 +775,63 @@ check('Guthaben ohne Zuschlag',       Ledger::balance($childId), $balance + 200)
 check('Aufraeumen: zurueckgenommen',  Completions::revoke($ohne, (int)$thies['id']), true);
 check('Guthaben wieder am Ausgang',   Ledger::balance($childId), $balance);
 
+echo "\nFeste Ausgaben am Monatsende\n";
+check('Beschriftung Monatsende',      Expenses::dayLabel(31), 'am Monatsende');
+check('Beschriftung fester Tag',      Expenses::dayLabel(5), 'jeden 5. im Monat');
+check('Auch der 29. gilt als Ende',   Expenses::dayLabel(29), 'am Monatsende');
+check('Ohne Angabe ans Monatsende',   (int)Expenses::find(Expenses::create([
+    'child_id'     => (int)$julius['id'],
+    'title'        => 'Vereinsbeitrag',
+    'amount_cents' => 1000,
+    'start_month'  => current_month(),
+    'created_by'   => (int)$thies['id'],
+]))['day_of_month'], Expenses::DAY_MONTH_END);
+
+// Eine Ausgabe, die seit zwei Monaten am Monatsende abgebucht wird.
+$endeId = Expenses::create([
+    'child_id'     => (int)$julius['id'],
+    'title'        => 'Fitnessstudio',
+    'amount_cents' => 1990,
+    'day_of_month' => Expenses::DAY_MONTH_END,
+    'start_month'  => month_shift(current_month(), -2),
+    'created_by'   => (int)$thies['id'],
+]);
+Billing::run(true);
+
+$tage = [];
+foreach (Ledger::forChild((int)$julius['id'], null, 50) as $buchung) {
+    if (($buchung['ref_type'] ?? '') === 'expense' && (int)$buchung['ref_id'] === $endeId) {
+        $tage[substr((string)$buchung['booked_at'], 0, 7)] = (string)$buchung['booked_at'];
+    }
+}
+$vormonat   = month_shift(current_month(), -1);
+$letzterTag = date('t', (int)strtotime($vormonat . '-01 12:00:00'));
+check('Vormonat ist abgebucht',       isset($tage[$vormonat]), true);
+check('Und zwar am letzten Tag',      substr($tage[$vormonat] ?? '', 0, 10), $vormonat . '-' . $letzterTag);
+check('Abends, nach dem Verdienten',  substr($tage[$vormonat] ?? '', 11), '23:00:00');
+check('Laufender Monat noch nicht',   isset($tage[current_month()]), (int)date('j') === (int)date('t'));
+
+echo "\nMonat fuer Monat\n";
+$uebersicht = Ledger::monthlyTotals((int)$julius['id']);
+check('Mehrere Monate aufgelistet',   count($uebersicht) >= 2, true);
+check('Neuester Monat zuerst',        $uebersicht[0]['month'] > $uebersicht[1]['month'], true);
+
+$zeile = null;
+foreach ($uebersicht as $m) {
+    if ($m['month'] === $vormonat) { $zeile = $m; }
+}
+check('Vormonat ist dabei',           $zeile !== null, true);
+check('Feste Ausgaben im Vormonat',   $zeile['expenses'] ?? 0, 1990);
+check('Saldo ist die Bilanz des Monats',
+      ($zeile['earned'] ?? 0) + ($zeile['bonus'] ?? 0) + ($zeile['corrections'] ?? 0)
+      - ($zeile['expenses'] ?? 0) - ($zeile['payouts'] ?? 0),
+      $zeile['net'] ?? 0);
+check('Saldo deckt sich mit monthSummary',
+      $zeile['net'] ?? 0, Ledger::monthSummary((int)$julius['id'], $vormonat)['net']);
+check('Summe aller Monate ist der Kontostand',
+      array_sum(array_column(Ledger::monthlyTotals((int)$julius['id'], 240), 'net')),
+      Ledger::balance((int)$julius['id']));
+
 // Aufraeumen
 foreach (glob($tmp . '/*') ?: [] as $file) {
     @unlink($file);

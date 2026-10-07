@@ -115,6 +115,21 @@ foreach ($back as $key => $value) {
 
 <section class="section">
   <div class="section__head">
+    <h2>Monat für Monat</h2>
+    <span class="section__hint">Saldo je Monat</span>
+  </div>
+  <?= View::render('partials/month-list', [
+        'monate' => $monate, 'target' => 'kind-detail', 'extra' => ['id' => $childId],
+  ]) ?>
+  <p class="field__hint">
+    Jeder Monat fängt am 1. bei 0 an; die festen Ausgaben gehen am Monatsende ab.
+    Der Saldo ist die Bilanz genau dieses Monats – ein Klick auf den Monat zeigt
+    die Buchungen dazu.
+  </p>
+</section>
+
+<section class="section">
+  <div class="section__head">
     <h2>Feste Ausgaben</h2>
     <div class="section__action">
       <a class="btn btn--sm" href="<?= e(url('ausgabe-form', ['kind' => $childId])) ?>">＋ Hinzufügen</a>
@@ -135,7 +150,7 @@ foreach ($back as $key => $value) {
               <div class="entry__icon" aria-hidden="true"><?= e($expense['emoji']) ?></div>
               <div class="entry__body">
                 <div class="entry__title"><?= e($expense['title']) ?></div>
-                <div class="entry__meta">jeden <?= (int)$expense['day_of_month'] ?>. im Monat, seit <?= e(month_label($expense['start_month'])) ?></div>
+                <div class="entry__meta"><?= e(Expenses::dayLabel((int)$expense['day_of_month'])) ?>, seit <?= e(month_label($expense['start_month'])) ?></div>
               </div>
               <div class="entry__amount value-negative"><?= e(Money::format(-(int)$expense['amount_cents'])) ?></div>
               <a class="btn btn--ghost btn--sm" href="<?= e(url('ausgabe-form', ['id' => (int)$expense['id']])) ?>">Bearbeiten</a>

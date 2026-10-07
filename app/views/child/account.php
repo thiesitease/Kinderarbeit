@@ -70,6 +70,20 @@ $isCurrentMonth = $month === current_month();
   </div>
 </section>
 
+<section class="section">
+  <div class="section__head">
+    <h2>Monat für Monat</h2>
+    <span class="section__hint">was am Ende übrig blieb</span>
+  </div>
+  <?= View::render('partials/month-list', [
+        'monate' => $monate, 'target' => 'kind-konto', 'extra' => [],
+  ]) ?>
+  <p class="field__hint">
+    Jeder Monat fängt am 1. bei 0 an. Am Monatsende gehen die festen Ausgaben ab –
+    was dann übrig ist, steht rechts. Tippe auf einen Monat, um seine Buchungen zu sehen.
+  </p>
+</section>
+
 <?php if ($expenses): ?>
   <?php
   // Nur zaehlen, was schon laeuft. Eine Ausgabe, die erst naechsten Monat
@@ -97,7 +111,7 @@ $isCurrentMonth = $month === current_month();
               <div class="entry__body">
                 <div class="entry__title"><?= e($expense['title']) ?></div>
                 <div class="entry__meta">
-                  jeden <?= (int)$expense['day_of_month'] ?>. im Monat<?php
+                  <?= e(Expenses::dayLabel((int)$expense['day_of_month'])) ?><?php
                   if ($expense['start_month'] > current_month()) {
                       echo ' · erst ab ' . e(month_label((string)$expense['start_month']));
                   }

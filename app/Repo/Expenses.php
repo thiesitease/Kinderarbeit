@@ -9,6 +9,19 @@ defined('KINDERARBEIT') || exit;
  */
 final class Expenses
 {
+    /**
+     * Buchungstag „am Monatsende“. Billing legt jeden Tag ueber dem 28. auf den
+     * letzten Tag des jeweiligen Monats – der 31. steht deshalb fuer „Monatsende“,
+     * ohne dass das Schema eine zweite Spalte braucht.
+     */
+    public const DAY_MONTH_END = 31;
+
+    /** Buchungstag als Text: „am Monatsende“ oder „jeden 5. im Monat“. */
+    public static function dayLabel(int $day): string
+    {
+        return $day > 28 ? 'am Monatsende' : 'jeden ' . $day . '. im Monat';
+    }
+
     public static function find(int $id): ?array
     {
         $stmt = Database::pdo()->prepare(
@@ -94,7 +107,7 @@ final class Expenses
             'title'       => $data['title'],
             'emoji'       => $data['emoji'] ?? '💳',
             'amount'      => $data['amount_cents'],
-            'day'         => $data['day_of_month'] ?? 1,
+            'day'         => $data['day_of_month'] ?? self::DAY_MONTH_END,
             'start_month' => $data['start_month'] ?? current_month(),
             'end_month'   => $data['end_month'] ?? null,
             'created_by'  => $data['created_by'],
@@ -116,7 +129,7 @@ final class Expenses
             'title'     => $data['title'],
             'emoji'     => $data['emoji'] ?? '💳',
             'amount'    => $data['amount_cents'],
-            'day'       => $data['day_of_month'] ?? 1,
+            'day'       => $data['day_of_month'] ?? self::DAY_MONTH_END,
             'end_month' => $data['end_month'] ?? null,
             'id'        => $id,
         ]);

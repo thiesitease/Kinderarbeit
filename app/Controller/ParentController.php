@@ -222,6 +222,7 @@ final class ParentController
             'expenses'      => Expenses::all($childId),
             'month'         => $month,
             'months'        => Ledger::availableMonths(),
+            'monate'        => Ledger::monthlyTotals($childId),
             'daysLeft'      => days_left_in_month(),
         ]);
     }

@@ -46,13 +46,20 @@ $emoji        = $expense['emoji'] ?? '💳';
       </div>
       <div class="field">
         <label class="field__label" for="day_of_month">Abbuchung am</label>
+        <?php $gewaehlt = (int)($expense['day_of_month'] ?? Expenses::DAY_MONTH_END); ?>
         <select class="select" id="day_of_month" name="day_of_month">
+          <option value="<?= Expenses::DAY_MONTH_END ?>"<?= $gewaehlt > 28 ? ' selected' : '' ?>>
+            am Monatsende
+          </option>
           <?php for ($day = 1; $day <= 28; $day++): ?>
-            <option value="<?= $day ?>"<?= (int)($expense['day_of_month'] ?? 1) === $day ? ' selected' : '' ?>>
+            <option value="<?= $day ?>"<?= $gewaehlt === $day ? ' selected' : '' ?>>
               <?= $day ?>. des Monats
             </option>
           <?php endfor; ?>
         </select>
+        <p class="field__hint">
+          Am Monatsende abgebucht steht das Konto nicht schon am 1. im Minus.
+        </p>
       </div>
     </div>
 

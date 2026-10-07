@@ -121,6 +121,24 @@ Knopf **verborgen** (`hidden`) statt falsch: gebucht wird ohnehin erst auf dem
 Server, und ein stehengebliebener Betrag neben einem verschobenen Regler wäre
 eine Lüge.
 
+**Jeder Monat steht für sich.** `Ledger::monthlyTotals()` gruppiert das Journal
+nach `booked_month` und liefert je Monat dieselben Felder wie `monthSummary()`,
+dazu `month`. Daraus baut `views/partials/month-list.php` die Liste „Monat für
+Monat“ – im Elternbereich auf der Kindseite, für das Kind unter *Mein Konto*.
+Der Saldo ist die Bilanz genau dieses Monats, nicht der fortlaufende Kontostand:
+am 1. fängt die Rechnung wieder bei null an. Das Guthaben über alle Monate steht
+weiterhin oben im Kopf.
+
+**Feste Ausgaben gehen am Monatsende ab.** Am Monatsanfang hat das Kind noch
+nichts verdient – wird dann abgebucht, steht das Konto sofort im Minus. Deshalb
+ist `Expenses::DAY_MONTH_END` (31) die Vorgabe; `Billing::effectiveDay()` legt
+jeden Tag über die Monatslänge hinaus auf den letzten Tag, der 31. steht also
+für „Monatsende“, ohne zweite Spalte im Schema. Gebucht wird dann um 23 Uhr,
+damit die Abbuchung in der Liste unter dem steht, was am selben Tag noch
+verdient wurde. Bestehende Datenbanken stellt `Database::expensesToMonthEnd()`
+einmalig um (Merker `expenses_month_end` in `settings`), ein später von Hand
+gesetzter Tag bleibt dadurch erhalten.
+
 **Feste Ausgaben brauchen keinen Cron.** `Billing::run()` läuft beim ersten
 Seitenaufruf des Tages mit (`settings.last_billing_run`) und holt auch zurückliegende
 Monate nach. Gegen Doppelbuchung schützt `UNIQUE(expense_id, month)` in

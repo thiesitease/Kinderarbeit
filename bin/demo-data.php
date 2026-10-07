@@ -127,18 +127,20 @@ Ledger::book((int)$bruno['id'], 4000, 'Übertrag aus dem Sparschwein', 'correcti
     (int)$thies['id'], month_shift(current_month(), -1) . '-28 10:00:00');
 
 // --- Feste Ausgaben ----------------------------------------------------------
-$startMonth = current_month();
+// Sie laufen schon seit dem Vormonat, damit die Monatsuebersicht einen
+// vollstaendigen Monat zeigt: verdient, am Monatsende abgebucht, Saldo.
+$startMonth = month_shift(current_month(), -1);
 Expenses::create(['child_id' => (int)$emilius['id'], 'title' => 'Beitrag Fitnessstudio',
-    'emoji' => '🏋️', 'amount_cents' => 1990, 'day_of_month' => 1,
+    'emoji' => '🏋️', 'amount_cents' => 1990,
     'start_month' => $startMonth, 'created_by' => (int)$thies['id']]);
 Expenses::create(['child_id' => (int)$emilius['id'], 'title' => 'Handyvertrag',
-    'emoji' => '📱', 'amount_cents' => 999, 'day_of_month' => 5,
+    'emoji' => '📱', 'amount_cents' => 999,
     'start_month' => $startMonth, 'created_by' => (int)$birgitta['id']]);
 Expenses::create(['child_id' => (int)$julius['id'], 'title' => 'Fußballverein',
-    'emoji' => '⚽', 'amount_cents' => 1200, 'day_of_month' => 1,
+    'emoji' => '⚽', 'amount_cents' => 1200,
     'start_month' => $startMonth, 'created_by' => (int)$birgitta['id']]);
 Expenses::create(['child_id' => (int)$bruno['id'], 'title' => 'Musikschule',
-    'emoji' => '🎹', 'amount_cents' => 1500, 'day_of_month' => 3,
+    'emoji' => '🎹', 'amount_cents' => 1500,
     'start_month' => $startMonth, 'created_by' => (int)$thies['id']]);
 
 // --- Erledigte und bestaetigte Aufgaben --------------------------------------

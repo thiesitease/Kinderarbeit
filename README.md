@@ -43,7 +43,7 @@ gehört ausdrücklich nicht zur Anwendung).
 | | |
 |---|---|
 | <img src="docs/bilder/03-kind-aufgaben.png" width="380"><br>**Was du machen kannst.** Oben das Guthaben, darunter alle offenen Aufgaben mit Betrag. Ein Tipp auf „Erledigt ✓“ meldet sie den Eltern – gemeldete Aufgaben sind ausgegraut und warten. | <img src="docs/bilder/04-kind-bescheid.png" width="380"><br>**Bescheid sagen.** Wartet etwas auf Bestätigung, kann das Kind Mama oder Papa mit einem Tipp per WhatsApp erinnern. Der Text ist fertig vorbereitet, abgeschickt wird von Hand. |
-| <img src="docs/bilder/05-kind-monat.png" width="380"><br>**Der Monat auf einen Blick.** Verdient, feste Ausgaben, ausgezahlt – und der **Rest im Monat**. Die vier Kacheln gehen immer auf; darunter steht, was automatisch abgeht. | <img src="docs/bilder/06-kind-konto.png" width="380"><br>**Mein Konto.** Oben, was jeden Monat fest abgeht – zum Nachlesen, nicht zum Ändern. Darunter jede einzelne Buchung, neueste zuerst, mit Datum und Herkunft. Eine zurückgenommene Bestätigung steht als eigene Gegenbuchung drin; was die Eltern nachträglich ändern, ist als „geändert“ gekennzeichnet. |
+| <img src="docs/bilder/05-kind-monat.png" width="380"><br>**Der Monat auf einen Blick.** Verdient, feste Ausgaben, ausgezahlt – und der **Rest im Monat**. Die vier Kacheln gehen immer auf; darunter steht, was automatisch abgeht. | <img src="docs/bilder/06-kind-konto.png" width="380"><br>**Mein Konto.** Oben **Monat für Monat**, was jeder Monat gebracht hat, darunter was fest abgeht – zum Nachlesen, nicht zum Ändern. Darunter jede einzelne Buchung, neueste zuerst, mit Datum und Herkunft. Eine zurückgenommene Bestätigung steht als eigene Gegenbuchung drin; was die Eltern nachträglich ändern, ist als „geändert“ gekennzeichnet. |
 | <img src="docs/bilder/07-kind-verlauf.png" width="380"><br>**Mein Verlauf.** Alle gemeldeten Aufgaben mit ihrem Stand: wartet, bestätigt oder abgelehnt – samt Uhrzeit und dem Elternteil, das entschieden hat. | <img src="docs/bilder/08-benachrichtigungen.png" width="380"><br>**Benachrichtigungen einschalten.** Pro Gerät ein Tipp. Danach meldet sich das Handy, sobald eine Aufgabe bestätigt ist oder es etwas Neues zu tun gibt – auch bei geschlossener Seite. |
 
 ### Sterne für schwere Aufgaben
@@ -59,7 +59,8 @@ gehört ausdrücklich nicht zur Anwendung).
 | <img src="docs/bilder/09-eltern-wiedervorlage.png" width="380"><br>**Wiedervorlage.** Alles, was die Kinder gemeldet haben, wartet hier. Bestätigen schreibt den Betrag gut, Ablehnen nicht. Die Notiz ist freiwillig und landet im Verlauf des Kindes. | <img src="docs/bilder/10-eltern-konten.png" width="380"><br>**Konten im Monat.** Je Kind Guthaben, Verdientes, feste Ausgaben und Rest – dazu die Abkürzungen zu Auszahlung und Details. |
 | <img src="docs/bilder/11-eltern-bestaetigt.png" width="380"><br>**Nach dem Bestätigen.** Der Betrag ist gutgeschrieben. Hat das Kind noch keine Benachrichtigung an, bietet die Seite einmalig an, ihm per WhatsApp Bescheid zu geben – mit Betrag und neuem Guthaben im Text. | <img src="docs/bilder/12-eltern-aufgaben.png" width="380"><br>**Aufgaben verwalten.** Anlegen, bearbeiten, pausieren, sortieren. Eine Aufgabe mit Historie wird beim Löschen nur pausiert, damit alte Buchungen nachvollziehbar bleiben. |
 | <img src="docs/bilder/13-aufgabe-anlegen.png" width="380"><br>**Neue Aufgabe.** Name, Betrag, Symbol aus der Auswahl, freiwillige Beschreibung – und für wen sie gilt: für alle Kinder oder für ein bestimmtes. | <img src="docs/bilder/14-eltern-kind-detail.png" width="380"><br>**Detailseite eines Kindes.** Guthaben, offene Meldungen, Monatsübersicht und alle Buchungen an einer Stelle – dazu der WhatsApp-Knopf für eine Nachricht zwischendurch. |
-| <img src="docs/bilder/15-buchung.png" width="380"><br>**Buchung erfassen.** Auszahlung, Bonus, Abzug oder Korrektur. Beträge immer positiv eingeben – die Richtung ergibt sich aus der Art, das Datum entscheidet über den Monat. Ein Haken erlaubt ausdrücklich, das Konto ins Minus zu buchen. Dasselbe Formular dient zum Bearbeiten. | <img src="docs/bilder/16-familie.png" width="380"><br>**Familie.** Persönlicher Zugangslink zum Kopieren oder direkt per WhatsApp, PIN neu setzen, Handynummer, Symbol und Farbe – und wie viele Geräte gerade angemeldet sind. |
+| <img src="docs/bilder/14b-monate.png" width="380"><br>**Monat für Monat.** Jeder vergangene Monat mit seinem Saldo – verdient, feste Ausgaben, Auszahlungen, und was unter dem Strich blieb. Am 1. fängt jeder Monat wieder bei null an; ein Klick auf den Monat zeigt die Buchungen dazu. | <img src="docs/bilder/15-buchung.png" width="380"><br>**Buchung erfassen.** Auszahlung, Bonus, Abzug oder Korrektur. Beträge immer positiv eingeben – die Richtung ergibt sich aus der Art, das Datum entscheidet über den Monat. Ein Haken erlaubt ausdrücklich, das Konto ins Minus zu buchen. Dasselbe Formular dient zum Bearbeiten. |
+| <img src="docs/bilder/16-familie.png" width="380"><br>**Familie.** Persönlicher Zugangslink zum Kopieren oder direkt per WhatsApp, PIN neu setzen, Handynummer, Symbol und Farbe – und wie viele Geräte gerade angemeldet sind. |
 
 ### Auf dem Rechner ist mehr Platz
 
@@ -227,6 +228,13 @@ verdient + Bonus + Korrekturen − feste Ausgaben − Auszahlungen = Rest im Mon
 Das **Guthaben** ist der tatsächliche Kontostand über alle Monate hinweg,
 der **Rest im Monat** die Bilanz des gewählten Monats.
 
+**Jeder Monat fängt am 1. bei null an.** Unter *Mein Konto* und auf der
+Detailseite eines Kindes steht **Monat für Monat** untereinander, was in jedem
+Monat zusammenkam und was unter dem Strich blieb – der Saldo dieses Monats, ob
+plus oder minus. Ein Klick auf den Monat zeigt die Buchungen dazu. Weil die
+festen Ausgaben erst am Monatsende abgehen (siehe unten), steht am Monatsanfang
+nichts im Minus, was noch gar nicht verdient werden konnte.
+
 ## Sterne und Zuschlag
 
 Manche Aufgaben sind an manchen Tagen einfach schwerer – der Rasen nach zwei
@@ -278,8 +286,10 @@ Buchungen, die zu etwas anderem gehören, nehmen es beim Löschen mit:
 
 ## Regelmäßige Ausgaben
 
-Eine feste Ausgabe (zum Beispiel „Beitrag Fitnessstudio“, 19,90 € am 1.)
-wird automatisch abgebucht. Weil auf einfachem Webhosting nicht immer ein
+Eine feste Ausgabe (zum Beispiel „Beitrag Fitnessstudio“, 19,90 €)
+wird automatisch abgebucht – **am Monatsende**, nachdem das Kind den Monat über
+Zeit hatte, sie zu verdienen. Ein anderer Tag lässt sich einstellen, wenn eine
+Abbuchung wirklich früher fällig ist. Weil auf einfachem Webhosting nicht immer ein
 Cronjob zur Verfügung steht, prüft die Anwendung das beim ersten
 Seitenaufruf des Tages und holt auch zurückliegende Monate nach.
 Ein eindeutiger Schlüssel über Ausgabe und Monat schließt Doppelbuchungen aus.

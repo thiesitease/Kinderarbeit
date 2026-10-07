@@ -100,6 +100,7 @@ final class ChildController
             'expenses'      => Expenses::all($childId, true),
             'month'         => $month,
             'months'        => Ledger::availableMonths(),
+            'monate'        => Ledger::monthlyTotals($childId),
             'daysLeft'      => days_left_in_month(),
         ]);
     }

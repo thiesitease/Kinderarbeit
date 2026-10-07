@@ -151,6 +151,7 @@ console.log('Elternbereich');
 
   await p.goto(`${BASE}/?p=kind-detail&id=1`, { waitUntil: 'networkidle' });
   await schuss(p, '14-eltern-kind-detail');
+  await schuss(p, '14b-monate', { zu: '.section:has(h2:text-is("Monat für Monat"))' });
 
   await p.goto(`${BASE}/?p=buchung`, { waitUntil: 'networkidle' });
   await schuss(p, '15-buchung');

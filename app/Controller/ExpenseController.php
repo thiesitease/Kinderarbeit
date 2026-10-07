@@ -59,7 +59,7 @@ final class ExpenseController
         $childId = param_int('child_id');
         $title   = param('title');
         $amount  = Money::parse(param('amount'));
-        $day     = max(1, min(28, param_int('day_of_month', 1)));
+        $day     = max(1, min(Expenses::DAY_MONTH_END, param_int('day_of_month', Expenses::DAY_MONTH_END)));
         $back    = $id > 0 ? ['id' => $id] : [];
 
         $child = Users::find($childId);
