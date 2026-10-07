@@ -149,6 +149,55 @@ final class Expenses
         $pdo->prepare('DELETE FROM expenses WHERE id = :id')->execute(['id' => $id]);
     }
 
+    /**
+     * Die Abbuchungen eines Monats zuruecknehmen, damit die Abrechnung sie am
+     * eingestellten Tag neu anlegt – etwa wenn sich mitten im Monat der Betrag,
+     * der Titel oder der Buchungstag geaendert hat.
+     *
+     * Merker und Buchung fallen zusammen weg; eines allein genuegt nicht: ohne
+     * Merker stuende die Buchung doppelt da, ohne Buchung wuerde der Monat nie
+     * wieder abgebucht.
+     *
+     * Von Hand im Verlauf geloeschte Abbuchungen (Merker ohne Buchung) bleiben
+     * unberuehrt – wer sie weggenommen hat, will sie nicht zurueck.
+     *
+     * @return array<int, array{title: string, child: string, amount_cents: int, booked_at: string}>
+     */
+    public static function clearBookings(string $month): array
+    {
+        return (array)Database::transaction(function (PDO $pdo) use ($month) {
+            $stmt = $pdo->prepare(
+                'SELECT b.id AS merker, b.ledger_id, e.title, u.name AS kind,
+                        l.amount_cents, l.booked_at
+                   FROM expense_bookings b
+                   JOIN expenses e ON e.id = b.expense_id
+                   JOIN users    u ON u.id = e.child_id
+                   JOIN ledger   l ON l.id = b.ledger_id
+                  WHERE b.month = :month
+               ORDER BY u.sort_order, e.id'
+            );
+            $stmt->execute(['month' => $month]);
+
+            $merkerWeg  = $pdo->prepare('DELETE FROM expense_bookings WHERE id = :id');
+            $buchungWeg = $pdo->prepare('DELETE FROM ledger WHERE id = :id');
+
+            $zurueck = [];
+            foreach ($stmt->fetchAll() as $zeile) {
+                $merkerWeg->execute(['id' => (int)$zeile['merker']]);
+                $buchungWeg->execute(['id' => (int)$zeile['ledger_id']]);
+
+                $zurueck[] = [
+                    'title'        => (string)$zeile['title'],
+                    'child'        => (string)$zeile['kind'],
+                    'amount_cents' => (int)$zeile['amount_cents'],
+                    'booked_at'    => (string)$zeile['booked_at'],
+                ];
+            }
+
+            return $zurueck;
+        });
+    }
+
     /** Wurde diese Ausgabe im angegebenen Monat schon abgebucht? */
     public static function isBooked(int $expenseId, string $month): bool
     {

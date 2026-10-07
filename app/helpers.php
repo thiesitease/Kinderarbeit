@@ -126,6 +126,21 @@ function contrast_color(string $hex): string
     return $luminance > 0.62 ? '#1c1917' : '#ffffff';
 }
 
+/**
+ * Auf eine Breite auffuellen – nach Zeichen, nicht nach Bytes. Fuer die
+ * Spalten der Werkzeuge in bin/.
+ *
+ * printf('%-20s') zaehlt Bytes. Jeder Umlaut belegt in UTF-8 zwei davon, und
+ * schon steht die Spalte daneben schief. mb_str_pad() gibt es erst ab PHP 8.3,
+ * auf dem Server laeuft 8.2.
+ */
+function spalte(string $text, int $breite, bool $rechts = false): string
+{
+    $text = mb_substr($text, 0, $breite);
+    $luft = str_repeat(' ', max(0, $breite - mb_strlen($text)));
+    return $rechts ? $luft . $text : $text . $luft;
+}
+
 /** Kurzer Zufallsstring (z. B. fuer Tokens). */
 function random_token(int $bytes = 16): string
 {

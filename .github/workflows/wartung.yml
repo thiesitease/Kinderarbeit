@@ -37,6 +37,7 @@ on:
           - anzeigen
           - fehlerprotokoll
           - pin-zuruecksetzen
+          - abbuchungen-neu-ansetzen
           - verlauf-leeren
       profil:
         description: 'Nur für "pin-zuruecksetzen": wessen PIN?'
@@ -95,6 +96,18 @@ jobs:
               echo "befehl=php bin/reset-pin.php $PROFIL --start" >> "$GITHUB_OUTPUT"
               echo "$PROFIL bekommt die Start-PIN zurück und muss beim nächsten"
               echo "Anmelden eine eigene setzen. Sonst ändert sich nichts."
+              ;;
+            abbuchungen-neu-ansetzen)
+              if [ "$BESTAETIGEN" != "ja" ]; then
+                echo "::notice::Es wird nur angezeigt, was zurückginge. Zum Ausführen „ja“ im Feld „bestaetigen“."
+                echo "befehl=php bin/neu-abbuchen.php" >> "$GITHUB_OUTPUT"
+              else
+                echo "befehl=php bin/neu-abbuchen.php --ja" >> "$GITHUB_OUTPUT"
+                echo "Die Abbuchungen der festen Ausgaben im laufenden Monat werden"
+                echo "zurückgenommen; die Abrechnung legt sie am eingestellten Tag neu an."
+                echo "Von Hand gelöschte Abbuchungen bleiben gelöscht, und das Werkzeug"
+                echo "legt vorher eine Sicherung in data/ an."
+              fi
               ;;
             verlauf-leeren)
               if [ "$BESTAETIGEN" != "ja" ]; then

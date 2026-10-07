@@ -832,6 +832,44 @@ check('Summe aller Monate ist der Kontostand',
       array_sum(array_column(Ledger::monthlyTotals((int)$julius['id'], 240), 'net')),
       Ledger::balance((int)$julius['id']));
 
+echo "\nAbbuchungen zuruecknehmen\n";
+// Eine Ausgabe, die seit dem Vormonat laeuft - zweimal abgebucht.
+$zurueckId = Expenses::create([
+    'child_id'     => (int)$emilius['id'],
+    'title'        => 'Schwimmbad',
+    'amount_cents' => 500,
+    'day_of_month' => 1,
+    'start_month'  => month_shift(current_month(), -1),
+    'created_by'   => (int)$thies['id'],
+]);
+Billing::run(true);
+check('Zwei Monate abgebucht',       Expenses::isBooked($zurueckId, current_month())
+                                     && Expenses::isBooked($zurueckId, month_shift(current_month(), -1)), true);
+
+$standVorher = Ledger::balance((int)$emilius['id']);
+$zurueck     = Expenses::clearBookings(current_month());
+$titel       = array_column($zurueck, 'title');
+
+check('Laufender Monat zurueckgenommen', in_array('Schwimmbad', $titel, true), true);
+check('Merker ist weg',               Expenses::isBooked($zurueckId, current_month()), false);
+check('Vormonat bleibt gebucht',      Expenses::isBooked($zurueckId, month_shift(current_month(), -1)), true);
+check('Guthaben steigt um den Betrag', Ledger::balance((int)$emilius['id']) >= $standVorher + 500, true);
+
+// Am 1. faellig: die Abrechnung legt den laufenden Monat sofort wieder an.
+check('Abrechnung bucht neu',         Billing::run(true) >= 1, true);
+check('Merker steht wieder',          Expenses::isBooked($zurueckId, current_month()), true);
+check('Guthaben wieder wie vorher',   Ledger::balance((int)$emilius['id']), $standVorher);
+
+// Von Hand geloeschte Abbuchungen bleiben geloescht: der Merker ohne Buchung
+// darf nicht aufgeraeumt werden, sonst kaeme sie beim naechsten Lauf zurueck.
+$stmt = $pdo->prepare('SELECT ledger_id FROM expense_bookings WHERE expense_id = :id AND month = :monat');
+$stmt->execute(['id' => $zurueckId, 'monat' => current_month()]);
+Ledger::delete((int)$stmt->fetchColumn(), (int)$thies['id']);
+check('Von Hand geloescht',           Expenses::isBooked($zurueckId, current_month()), true);
+check('Bleibt beim Zuruecknehmen liegen',
+      in_array('Schwimmbad', array_column(Expenses::clearBookings(current_month()), 'title'), true), false);
+check('Und wird nicht neu gebucht',   Billing::run(true), 0);
+
 // Aufraeumen
 foreach (glob($tmp . '/*') ?: [] as $file) {
     @unlink($file);

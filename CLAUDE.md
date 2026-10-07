@@ -37,13 +37,15 @@ git config commit.gpgsign false
 ## Befehle
 
 ```bash
-php bin/selftest.php                 # 284 Prüfungen der Rechenlogik, ohne Webserver
+php bin/selftest.php                 # 295 Prüfungen der Rechenlogik, ohne Webserver
 php bin/demo-data.php --force        # Beispielbestand zum Ausprobieren (löscht die DB!)
 php bin/zugangslink.php Emilius      # Zugangslink erzeugen (Rettungsanker per SSH)
 php bin/reset-pin.php Thies 4711     # PIN zurücksetzen, wenn niemand mehr reinkommt
 php bin/protokoll.php                # Ende von data/php-error.log anzeigen
 php bin/reset-pin.php Bruno --start  # zurück auf die Start-PIN aus SEED_USERS
 php bin/leeren.php                   # zeigt den Bestand, löscht nichts
+php bin/neu-abbuchen.php             # zeigt die Abbuchungen des Monats
+php bin/neu-abbuchen.php --ja        # nimmt sie zurück, Abrechnung legt sie neu an
 php bin/leeren.php verlauf --ja      # Buchungen und Meldungen weg, Profile bleiben
 php -S localhost:8080                # lokal ausprobieren
 ```
@@ -138,6 +140,16 @@ damit die Abbuchung in der Liste unter dem steht, was am selben Tag noch
 verdient wurde. Bestehende Datenbanken stellt `Database::expensesToMonthEnd()`
 einmalig um (Merker `expenses_month_end` in `settings`), ein später von Hand
 gesetzter Tag bleibt dadurch erhalten.
+
+**Eine Abbuchung mitten im Monat ändern heißt: zurücknehmen.** Ändert sich
+Betrag, Titel oder Buchungstag einer festen Ausgabe, steht die Abbuchung dieses
+Monats schon mit den alten Werten im Journal. `Expenses::clearBookings($monat)`
+nimmt Merker **und** Buchung zusammen weg, damit `Billing::run()` sie am
+eingestellten Tag neu anlegt – eines allein genügt nicht: ohne Merker stünde sie
+doppelt da, ohne Buchung käme der Monat nie wieder. Von Hand im Verlauf
+gelöschte Abbuchungen (Merker ohne Buchung) bleiben dabei liegen; wer sie
+weggenommen hat, will sie nicht zurück. Auf der Kommandozeile liegt das in
+`bin/neu-abbuchen.php`, im Wartungslauf unter „abbuchungen-neu-ansetzen".
 
 **Feste Ausgaben brauchen keinen Cron.** `Billing::run()` läuft beim ersten
 Seitenaufruf des Tages mit (`settings.last_billing_run`) und holt auch zurückliegende
@@ -336,6 +348,9 @@ Nachmittag gekostet und sind nirgends sonst dokumentiert:
 Befehl auf dem Server aus – **eine** SSH-Verbindung pro Lauf, dieselbe
 `concurrency`-Gruppe wie die Veröffentlichung, damit nie beides gleichzeitig
 läuft. Zum Löschen muss im Feld „bestaetigen“ genau `ja` stehen.
+
+„abbuchungen-neu-ansetzen“ zeigt ohne `bestaetigen` nur an, was zurückginge –
+wie jede Aufgabe, die Daten anfasst, braucht auch sie ein `ja`.
 
 Was dort bewusst **nicht** auswählbar ist: „alles löschen“ (macht die
 Zugangslinks ungültig – gehört an eine Stelle, an der man tippt statt klickt)

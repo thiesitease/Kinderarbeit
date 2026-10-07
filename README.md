@@ -343,6 +343,8 @@ php bin/zugangslink.php Emilius     # neuen Zugangslink erzeugen
 php bin/leeren.php                  # zeigt, was in der Datenbank steht
 php bin/leeren.php verlauf          # Buchungen und Meldungen löschen
 php bin/leeren.php alles            # zurück auf Werkszustand
+php bin/neu-abbuchen.php            # Abbuchungen des Monats anzeigen
+php bin/neu-abbuchen.php --ja       # sie zurücknehmen, damit sie neu gebucht werden
 ```
 
 `bin/leeren.php` ist die einzige Stelle, an der Buchungen verschwinden – im
